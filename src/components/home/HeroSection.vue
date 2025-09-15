@@ -16,7 +16,7 @@
           </p>
           <div class="flex flex-col sm:flex-row gap-4">
             <router-link
-              to="/questionnaire"
+              to="/quiz"
               class="bg-primary hover:bg-primary/90 text-white px-8 py-3 rounded-full font-medium transition-smooth text-center"
             >
               开始测试

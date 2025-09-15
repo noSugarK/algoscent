@@ -31,7 +31,7 @@
 
                 <!-- 按钮 -->
                 <router-link
-                  to="/questionnaire"
+                  to="/quiz"
                   class="inline-block bg-primary hover:bg-primary/90 text-white px-8 py-3 rounded-full font-medium transition-colors duration-300"
                 >
                   开始测试 <i class="fa fa-arrow-right ml-2"></i>

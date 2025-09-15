@@ -64,7 +64,7 @@
               我们的香水不仅是一种气味，更是一种情绪调节工具。通过每天使用，你可以创造一个持续的自我关怀仪式，逐步改善情绪状态。
             </p>
             <router-link
-              to="/questionnaire"
+              to="/quiz"
               class="inline-flex items-center text-primary font-medium hover:underline focus:underline transition"
             >
               发现适合你的疗愈香氛
