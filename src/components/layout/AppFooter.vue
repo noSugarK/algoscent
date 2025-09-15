@@ -11,7 +11,7 @@
           <h4 class="font-semibold mb-4">快速链接</h4>
           <ul class="space-y-2 text-gray-400">
             <li><router-link to="/" class="hover:text-white">首页</router-link></li>
-            <li><router-link to="/questionnaire" class="hover:text-white">香氛测试</router-link></li>
+            <li><router-link to="/quiz" class="hover:text-white">香氛测试</router-link></li>
             <li><a href="#" class="hover:text-white">产品系列</a></li>
           </ul>
         </div>

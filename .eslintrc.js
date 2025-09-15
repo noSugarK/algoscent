@@ -1,12 +1,15 @@
+const path = require('path')
+
 module.exports = {
   env: {
     browser: true,
-    es2021: true
+    es2021: true,
   },
   extends: [
-    'plugin:vue/vue3-essential',
-    'eslint:recommended'
+    'eslint:recommended',
+    path.resolve(__dirname, 'node_modules/eslint-plugin-vue/lib/configs/vue3-recommended.js')
   ],
+  parser: 'vue-eslint-parser',
   parserOptions: {
     ecmaVersion: 'latest',
     parser: '@babel/eslint-parser',
@@ -16,14 +19,7 @@ module.exports = {
     'vue'
   ],
   rules: {
-    'vue/multi-word-component-names': 'off', // 关闭组件名检查
+    'vue/multi-word-component-names': 'off',
     'no-unused-vars': 'warn',
-    'vue/script-setup-uses-vars': 'error'
-  },
-  globals: {
-    defineProps: 'readonly',
-    defineEmits: 'readonly',
-    defineExpose: 'readonly',
-    withDefaults: 'readonly'
   }
-};
+}

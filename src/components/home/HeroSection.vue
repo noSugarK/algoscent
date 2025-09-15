@@ -33,7 +33,7 @@
         <!-- 轮播图区域 -->
         <div class="w-full lg:w-1/2 relative">
           <!-- 轮播容器 -->
-          <div class="relative z-10 rounded-2xl overflow-hidden shadow-2xl">
+          <div class="relative z-10 rounded-2xl overflow-hidden shadow-2xl min-h-[400px] group">
             <!-- 图片项 -->
             <div
               v-for="(item, index) in images"
@@ -47,14 +47,14 @@
               <img
                 :src="item.src"
                 :alt="item.alt"
-                class="w-full h-auto object-cover"
+                class="w-full h-full object-cover"
               />
             </div>
 
-            <!-- 左右箭头 -->
+            <!-- 左右箭头（仅 hover 显示） -->
             <button
               @click="prev"
-              class="absolute left-4 top-1/2 -translate-y-1/2 bg-white/20 hover:bg-white/40 text-white p-2 rounded-full z-20 transition"
+              class="absolute left-4 top-1/2 -translate-y-1/2 bg-white/20 hover:bg-white/40 text-white p-2 rounded-full z-20 transition-opacity duration-300 opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto"
               aria-label="上一张"
             >
               <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -63,7 +63,7 @@
             </button>
             <button
               @click="next"
-              class="absolute right-4 top-1/2 -translate-y-1/2 bg-white/20 hover:bg-white/40 text-white p-2 rounded-full z-20 transition"
+              class="absolute right-4 top-1/2 -translate-y-1/2 bg-white/20 hover:bg-white/40 text-white p-2 rounded-full z-20 transition-opacity duration-300 opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto"
               aria-label="下一张"
             >
               <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -71,7 +71,7 @@
               </svg>
             </button>
 
-            <!-- 指示器 -->
+            <!-- 指示器（保持常显） -->
             <div class="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2 z-20">
               <button
                 v-for="(item, index) in images"
@@ -87,7 +87,7 @@
             </div>
           </div>
 
-          <!-- 背景光晕（保留原设计） -->
+          <!-- 背景光晕 -->
           <div class="absolute top-10 -right-5 w-64 h-64 bg-accent/20 rounded-full blur-3xl -z-10"></div>
           <div class="absolute -bottom-10 -left-5 w-72 h-72 bg-primary/20 rounded-full blur-3xl -z-10"></div>
         </div>
@@ -99,18 +99,17 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
 
-// 图片数据
 const images = ref([
   {
-    src: 'https://picsum.photos/id/21/800/600',
+    src: '/images/paperwall_2.jpg',
     alt: '疗愈香氛产品展示 1'
   },
   {
-    src: 'https://picsum.photos/id/22/800/600',
+    src: '/images/paperwall_2.jpg',
     alt: '疗愈香氛产品展示 2'
   },
   {
-    src: 'https://picsum.photos/id/23/800/600',
+    src: '/images/paperwall_2.jpg',
     alt: '疗愈香氛产品展示 3'
   }
 ])
@@ -118,38 +117,32 @@ const images = ref([
 const current = ref(0)
 let interval = null
 
-// 下一张
 const next = () => {
   current.value = (current.value + 1) % images.value.length
 }
 
-// 上一张
 const prev = () => {
   current.value = (current.value - 1 + images.value.length) % images.value.length
 }
 
-// 自动轮播
 onMounted(() => {
-  interval = setInterval(next, 4000) // 每4秒切换
+  interval = setInterval(next, 4000)
 })
 
-// 清理定时器
 onUnmounted(() => {
   if (interval) clearInterval(interval)
 })
 </script>
 
 <style scoped>
-.bg-primary {
-  background-color: #7b61ff;
+/* 可选：优化淡入动画 */
+.opacity-100 {
+  opacity: 1;
+  animation: fadeIn 0.7s ease-in-out;
+  will-change: opacity;
 }
-
-/* 可选：添加淡入淡出动画 */
 @keyframes fadeIn {
   from { opacity: 0; }
   to { opacity: 1; }
-}
-.opacity-100 {
-  animation: fadeIn 0.7s ease-in-out;
 }
 </style>

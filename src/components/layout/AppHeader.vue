@@ -6,7 +6,7 @@
         
         <nav class="hidden md:flex space-x-8">
           <router-link to="/" class="hover:text-primary transition-colors">首页</router-link>
-          <router-link to="/questionnaire" class="hover:text-primary transition-colors">香氛测试</router-link>
+          <router-link to="/quiz" class="hover:text-primary transition-colors">香氛测试</router-link>
           <a href="#" class="hover:text-primary transition-colors">产品系列</a>
           <a href="#" class="hover:text-primary transition-colors">关于我们</a>
         </nav>
