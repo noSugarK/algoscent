@@ -1,4 +1,3 @@
-<!-- src/components/quiz/PartSingleWithText.vue -->
 <template>
   <div class="space-y-6">
     <!-- 单选选项 -->

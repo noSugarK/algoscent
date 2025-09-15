@@ -1,4 +1,3 @@
-<!-- src/components/quiz/PartSingle.vue -->
 <template>
   <div class="space-y-4">
     <label

@@ -1,6 +1,5 @@
-<!-- src/components/quiz/QuizComponent.vue -->
 <template>
-  <div class="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 py-12 px-4">
+  <div class="bg-gradient-to-br from-indigo-50 via-white to-purple-50 py-12 px-4">
     <div class="max-w-4xl mx-auto">
       <!-- Header -->
       <div class="text-center mb-8">

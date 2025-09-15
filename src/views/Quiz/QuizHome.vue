@@ -1,7 +1,6 @@
-<!-- src/views/HomeView.vue -->
 <template>
   <AppHeader />
-  <div class="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 py-12 px-4 flex items-center justify-center">
+  <div class="bg-gradient-to-br from-indigo-50 via-white to-purple-50 py-12 px-4 flex items-center justify-center">
     <!-- 首页 -->
     <div v-if="!showQuiz" class="max-w-3xl mx-auto bg-white rounded-3xl shadow-xl p-10 md:p-12 border border-gray-100">
       <div class="text-center mb-10">
