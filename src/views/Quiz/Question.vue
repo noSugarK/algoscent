@@ -11,15 +11,16 @@
 
       <!-- Result View -->
       <ResultDisplay
-        v-if="completed"
-        :report="getReport()"
-        @restart="handleRestart"
-        @submit="handleSubmit"
-        class="animate-fadeIn"
+          v-if="completed"
+          :report="getReport()"
+          @restart="handleRestart"
+          @submit="handleSubmit"
+          class="animate-fadeIn"
       />
 
       <!-- Quiz View -->
-      <div v-else-if="currentQuestion" class="bg-white rounded-3xl shadow-xl p-8 md:p-10 border border-gray-100 animate-slideUp">
+      <div v-else-if="currentQuestion"
+           class="bg-white rounded-3xl shadow-xl p-8 md:p-10 border border-gray-100 animate-slideUp">
         <!-- Group Title -->
         <div class="mb-8 text-center bg-gray-50 rounded-2xl p-6 -mx-8 md:-mx-10">
           <h2 class="text-2xl font-bold text-gray-800 mb-2">{{ currentGroup.title }}</h2>
@@ -27,34 +28,43 @@
         </div>
 
         <!-- Question -->
-        <div class="mb-8">
-          <h3 class="text-xl font-medium text-gray-800 mb-6">{{ currentQuestion.text }}</h3>
+        <div class="flex items-center justify-between mb-8">
+          <h3 class="text-xl font-medium text-gray-800 flex-grow">{{ currentQuestion.text }}</h3>
+          <button
+              v-if="currentQuestion.type === 'image-single'"
+              @click="shuffleImages(currentQuestion)"
+              class="flex items-center space-x-2 px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium rounded-xl transition-colors">
+            <span>换一组</span>
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+            </svg>
+          </button>
         </div>
 
         <!-- Dynamic Question Component -->
         <component
-          :is="getComponentForQuestion(currentQuestion)"
-          :question="currentQuestion"
-          v-model:answer="tempAnswer"
-          v-model:multiAnswer="tempMultiAnswer"
-          v-model:textAnswer="tempTextAnswer"
-          @update="onAnswerUpdate"
+            :is="getComponentForQuestion(currentQuestion)"
+            :question="currentQuestion"
+            v-model:answer="tempAnswer"
+            v-model:multiAnswer="tempMultiAnswer"
+            v-model:textAnswer="tempTextAnswer"
+            @update="onAnswerUpdate"
         />
 
         <!-- Navigation -->
         <div class="flex flex-col sm:flex-row justify-between gap-4 mt-10 pt-6 border-t border-gray-100">
           <button
-            v-if="visibleQuestionIndex > 0"
-            @click="prevQuestion"
-            class="px-6 py-3 bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium rounded-xl transition-colors transform hover:-translate-y-1"
+              v-if="visibleQuestionIndex > 0"
+              @click="prevQuestion"
+              class="px-6 py-3 bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium rounded-xl transition-colors transform hover:-translate-y-1"
           >
             ← 上一题
           </button>
           <div></div>
           <button
-            @click="nextQuestion"
-            :disabled="!isAnswered"
-            :class="[
+              @click="nextQuestion"
+              :disabled="!isAnswered"
+              :class="[
               'px-6 py-3 font-medium rounded-xl transition-all transform',
               isAnswered
                 ? 'bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 text-white hover:scale-105'
@@ -75,8 +85,8 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch, markRaw } from 'vue'
-import { questionGroups } from '@/data/questions.js'
+import {ref, computed, onMounted, watch, markRaw} from 'vue'
+import {questionGroups} from '@/data/questions.js'
 import ResultDisplay from '@/components/quiz/ResultDisplay.vue'
 
 // 题型组件
@@ -117,6 +127,8 @@ const initQuestions = () => {
         groupId: group.id,
         groupTitle: group.title,
         groupDescription: group.description,
+        imageRange: group.imageRange,
+        imagesPath: group.imagesPath,
         ...q
       })
     })
@@ -137,13 +149,15 @@ const updateVisibleQuestions = () => {
   loadCurrentQuestionState()
 }
 
-watch(answers, () => updateVisibleQuestions(), { deep: true })
+watch(answers, () => updateVisibleQuestions(), {deep: true})
 
 // ===== 计算属性 =====
 const currentQuestion = computed(() => visibleQuestions.value[currentVisibleIndex.value])
 const currentGroup = computed(() => currentQuestion.value ? {
   title: currentQuestion.value.groupTitle,
-  description: currentQuestion.value.groupDescription
+  description: currentQuestion.value.groupDescription,
+  imageRange: currentQuestion.value.imageRange,
+  imagesPath: currentQuestion.value.imagesPath
 } : {})
 
 const visibleQuestionIndex = computed(() => currentVisibleIndex.value)
@@ -157,7 +171,7 @@ const isAnswered = computed(() => {
     return !!tempAnswer.value
   } else if (q.type === 'multiple' || q.type === 'image-multiple') {
     return tempMultiAnswer.value.length >= (q.minSelection || 1) &&
-           tempMultiAnswer.value.length <= (q.maxSelection || Infinity)
+        tempMultiAnswer.value.length <= (q.maxSelection || Infinity)
   } else if (q.type === 'single-with-text') {
     if (!tempAnswer.value) return false
     if (tempAnswer.value === q.showTextWhen) {
@@ -206,7 +220,7 @@ const saveAnswer = () => {
   if (!q) return
 
   if (q.type === 'single' || q.type === 'image-single') {
-    answers.value[q.id] = { value: tempAnswer.value }
+    answers.value[q.id] = {value: tempAnswer.value}
   } else if (q.type === 'multiple' || q.type === 'image-multiple') {
     answers.value[q.id] = [...tempMultiAnswer.value]
   } else if (q.type === 'single-with-text') {
@@ -219,7 +233,8 @@ const saveAnswer = () => {
   }
 }
 
-const onAnswerUpdate = () => {}
+const onAnswerUpdate = () => {
+}
 
 const nextQuestion = () => {
   if (!isAnswered.value) return
@@ -272,14 +287,67 @@ const getReport = () => ({
   startTime: new Date(startTime.value).toISOString(),
   endTime: new Date().toISOString(),
   durationMs: Date.now() - startTime.value,
-  answers: { ...answers.value },
+  answers: {...answers.value},
   completedAt: new Date().toLocaleString()
 })
+
+// 方法定义
+const shuffleImages = (question) => {
+
+  const {start, end} = currentGroup.value.imageRange;
+  let selectedImages = [];
+  const allImages = Array.from({length: end - start + 1}, (_, i) => start + i); // 生成从start到end的数组
+
+  while (selectedImages.length < 4 && allImages.length > 0) {
+    const randomIndex = Math.floor(Math.random() * allImages.length);
+    const chosenNumber = allImages[randomIndex];
+    selectedImages.push(chosenNumber);
+    allImages.splice(randomIndex, 1); // 移除已选中的图片避免重复
+  }
+
+  question.options = selectedImages.map((imgNum, index) => ({
+    label: `选项 ${index + 1}`,
+    value: `${imgNum}.jpg`,
+    image: `${currentGroup.value.imagesPath}${imgNum}.jpg`
+  }));
+};
+
+// 监听当前问题变化
+watch(currentQuestion, (newVal) => {
+  if (newVal?.type === 'image-single') {
+    shuffleImages(newVal); // 当切换到新问题时自动加载一组图片
+  }
+});
 </script>
 
 <style scoped>
-@keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-@keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
-.animate-fadeIn { animation: fadeIn 0.6s ease-out forwards; }
-.animate-slideUp { animation: slideUp 0.5s ease-out forwards; }
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.6s ease-out forwards;
+}
+
+.animate-slideUp {
+  animation: slideUp 0.5s ease-out forwards;
+}
 </style>

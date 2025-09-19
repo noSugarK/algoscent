@@ -15,7 +15,7 @@
       <div class="bg-gray-50 rounded-2xl p-8 mb-8 text-left space-y-4">
         <h3 class="font-bold text-gray-800 text-lg">📋 问卷说明</h3>
         <ul class="list-disc list-inside space-y-2 text-gray-700">
-          <li>共4个部分，约8~10题，预计耗时2分钟</li>
+          <li>共4个部分，约25题，预计耗时10分钟</li>
           <li>所有信息仅用于香氛推荐，严格保密</li>
           <li>请根据第一直觉作答，无对错之分</li>
           <li>部分题目会根据你的选择动态调整</li>

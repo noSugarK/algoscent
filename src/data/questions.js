@@ -3,8 +3,8 @@ export const questionGroups = [
     // ============ Part 1: 多个单选题 ============
     {
         id: "part1",
-        title: "🌿 基础情绪与偏好",
-        description: "请回答以下基础问题，帮助我们为你推荐最契合人格的香水",
+        title: "🌿 情景选择",
+        description: "基于大五人格的香水偏好测试",
         questions: [
             {
                 id: "q1-1",
@@ -271,29 +271,17 @@ export const questionGroups = [
     // ============ Part 3: 多个图片单选题 ============
     {
         id: 'part3',
-        title: '🖼️ 视觉风格偏好（单选）',
-        description: '每题选择一张最打动你的图片',
+        title: '🖼️ 感官具象化场景选择',
+        description: '请选择一个让你感受到放松的场景，或者用文字描述出来',
+        imagesPath: '/images/part3/', // 图片路径前缀
+        imageRange: {start: 1, end: 16}, // 新增：图片文件编号范围
         questions: [
             {
-                id: 'q5',
+                id: 'q3',
                 text: '哪张图让你感到最放松？',
                 type: 'image-single',
-                options: [
-                    {label: '森林', value: 'forest', image: 'https://picsum.photos/id/10/400/300'},
-                    {label: '海洋', value: 'ocean', image: 'https://picsum.photos/id/20/400/300'},
-                    {label: '沙漠', value: 'desert', image: 'https://picsum.photos/id/30/400/300'}
-                ]
+                options: []
             },
-            {
-                id: 'q6',
-                text: '你更喜欢哪种室内风格？',
-                type: 'image-single',
-                options: [
-                    {label: '北欧极简', value: 'nordic', image: 'https://picsum.photos/id/40/400/300'},
-                    {label: '复古奢华', value: 'vintage', image: 'https://picsum.photos/id/50/400/300'},
-                    {label: '日式禅意', value: 'zen', image: 'https://picsum.photos/id/60/400/300'}
-                ]
-            }
         ]
     },
 
