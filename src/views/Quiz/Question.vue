@@ -80,10 +80,11 @@ import { questionGroups } from '@/data/questions.js'
 import ResultDisplay from '@/components/quiz/ResultDisplay.vue'
 
 // 题型组件
-import Part1 from '@/components/quiz/Part1.vue'
-import Part2 from '@/components/quiz/Part2.vue'
-import Part3 from '@/components/quiz/Part3.vue'
-import Part4 from '@/components/quiz/Part4.vue'
+import Single from '@/components/quiz/Single.vue'
+import Multiple from "@/components/quiz/Multiple.vue";
+import SingleWithText from '@/components/quiz/SingleWithText.vue'
+import ImageSingle from '@/components/quiz/ImageSingle.vue'
+import ImageMultiple from '@/components/quiz/ImageMultiple.vue'
 
 // ===== 定义事件 =====
 const emit = defineEmits(['complete', 'restart'])
@@ -170,10 +171,11 @@ const isAnswered = computed(() => {
 })
 
 const componentMap = {
-  'single': markRaw(Part1),
-  'single-with-text': markRaw(Part2),
-  'image-single': markRaw(Part3),
-  'image-multiple': markRaw(Part4)
+  'single': markRaw(Single),
+  'multiple': markRaw(Multiple),
+  'single-with-text': markRaw(SingleWithText),
+  'image-single': markRaw(ImageSingle),
+  'image-multiple': markRaw(ImageMultiple)
 }
 
 const getComponentForQuestion = (q) => componentMap[q.type] || 'div'

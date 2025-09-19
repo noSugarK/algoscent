@@ -1,13 +1,13 @@
 <template>
   <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
     <button
-      v-for="option in question.options"
-      :key="option.value"
-      @click="onSelect(option.value)"
-      class="rounded-xl overflow-hidden border-2 transition-all duration-200 transform hover:scale-105"
-      :class="answer === option.value ? 'border-indigo-500 shadow-lg' : 'border-gray-200'"
+        v-for="option in question.options"
+        :key="option.value"
+        @click="onSelect(option.value)"
+        class="rounded-xl overflow-hidden border-2 transition-all duration-200 transform hover:scale-105"
+        :class="answer === option.value ? 'border-indigo-500 shadow-lg' : 'border-gray-200'"
     >
-      <img :src="option.image" :alt="option.label" class="w-full h-32 md:h-40 object-cover" />
+      <img :src="option.image" :alt="option.label" class="w-full h-32 md:h-40 object-cover"/>
       <div class="p-3 bg-white">
         <p class="text-sm font-medium text-gray-800">{{ option.label }}</p>
       </div>
