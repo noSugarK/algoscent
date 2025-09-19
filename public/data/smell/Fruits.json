@@ -1,0 +1,368 @@
+{
+  "category": "蔬果、坚果",
+  "category_english": "Fruits, Vegetables, Nuts",
+  "category_image": "//img.xssdcdn.com/static/page/qw-shuguo-jianguo.jpg",
+  "description": "在香水界，“水果”指的是柑橘类以外的各种水果，柑橘类通常皮厚，并富含芳香精油，非常适合提取天然精油。而非柑橘类水果所含精油极少，一般通过人工化合物来模拟代替，以水果为主题的香水是在近些年来才开始流行的。\n\n以蔬菜为香料的香水更为不寻常，蔬菜的气味跨度可以很大，从清爽宜人到厚重陈腐，都能被应用到香水配方当中。蔬菜与水果一样，含水量高，精油含量少，无法通过冷压法或蒸馏法来提取天然精油，在香水中都是通过模拟气味的方法来实现的，比如萝卜的气味实际是由鸢尾根来实现的。\n\n水果和蔬菜作为香料能为香水提供微妙的质感，增加清新的特质。从2000年开始，果香花香调的香水变得特别流行，桃子和李子成为了现代调香师手中的两大利器。\n\n坚果类的常见香料包括杏仁、花生（阿蒂仙白树森林 L`Artisan Bois Farine, 2003）、榛子（阿蒂仙淘气野狼 L`Artisan Mechant Loup, 1997），它们也都是通过人工模拟而实现的。坚果类香料能为过于轻盈，或含有泥土味的香水配方提供稳重的质感，如榛子与具有泥土味的香根草在爱马仕 馨香芳果 Hermes Hermessence Vetiver Tonka, 2004这一香水中的完美搭配。",
+  "notes": [
+    {
+      "name": "荔枝",
+      "english_name": "Litchi",
+      "image": "//img.xssdcdn.com/odor/78213.jpg",
+      "description": "荔枝原产于中国南部，是亚热带果树，常绿乔木，高约10米。果皮肯多数鳞斑状突起，鲜红，紫红。果肉产鲜时半透明凝脂状，味香美。"
+    },
+    {
+      "name": "桃子",
+      "english_name": "Peach",
+      "image": "//img.xssdcdn.com/odor/85587.jpg",
+      "description": "/qiwei/11085587-taozi-peach.html"
+    },
+    {
+      "name": "椰子",
+      "english_name": "Coconut",
+      "image": "//img.xssdcdn.com/odor/83335.jpg",
+      "description": "/qiwei/11083335-yezi-coconut.html"
+    },
+    {
+      "name": "梨",
+      "english_name": "Pear",
+      "image": "//img.xssdcdn.com/odor/67005.jpg",
+      "description": "/qiwei/11067005-li-pear.html"
+    },
+    {
+      "name": "无花果",
+      "english_name": "Fig",
+      "image": "//img.xssdcdn.com/odor/41955.jpg",
+      "description": "/qiwei/11041955-wuhuaguo-fig.html"
+    },
+    {
+      "name": "黑加仑",
+      "english_name": "Black Currant",
+      "image": "//img.xssdcdn.com/odor/47957.jpg",
+      "description": "/qiwei/11047957-heijialun-black-currant.html"
+    },
+    {
+      "name": "树莓",
+      "english_name": "Raspberry",
+      "image": "//img.xssdcdn.com/odor/11733.jpg",
+      "description": "/qiwei/11011733-shumei-raspberry.html"
+    },
+    {
+      "name": "苹果",
+      "english_name": "Apple",
+      "image": "//img.xssdcdn.com/odor/61258.jpg",
+      "description": "/qiwei/11061258-pingguo-apple.html"
+    },
+    {
+      "name": "杏仁",
+      "english_name": "Almond",
+      "image": "//img.xssdcdn.com/odor/21186.jpg",
+      "description": "/qiwei/11021186-xingren-almond.html"
+    },
+    {
+      "name": "菠萝",
+      "english_name": "Pineapple",
+      "image": "//img.xssdcdn.com/odor/51967.jpg",
+      "description": "/qiwei/11051967-boluo-pineapple.html"
+    },
+    {
+      "name": "芒果",
+      "english_name": "Mango",
+      "image": "//img.xssdcdn.com/odor/47214.jpg",
+      "description": "/qiwei/11047214-mangguo-mango.html"
+    },
+    {
+      "name": "西瓜",
+      "english_name": "Watermelon",
+      "image": "//img.xssdcdn.com/odor/76995.jpg",
+      "description": "/qiwei/11076995-xigua-watermelon.html"
+    },
+    {
+      "name": "李子",
+      "english_name": "Plum",
+      "image": "//img.xssdcdn.com/odor/23001.jpg",
+      "description": "/qiwei/11023001-lizi-plum.html"
+    },
+    {
+      "name": "黄瓜",
+      "english_name": "Cucumber",
+      "image": "//img.xssdcdn.com/odor/94291.jpg",
+      "description": "/qiwei/11094291-huanggua-cucumber.html"
+    },
+    {
+      "name": "葡萄",
+      "english_name": "Grapes",
+      "image": "//img.xssdcdn.com/odor/61796.jpg",
+      "description": "/qiwei/11061796-putao-grapes.html"
+    },
+    {
+      "name": "果香",
+      "english_name": "Fruity Notes",
+      "image": "//img.xssdcdn.com/odor/84165.jpg",
+      "description": "/qiwei/11084165-guoxiang-fruity-notes.html"
+    },
+    {
+      "name": "红浆果",
+      "english_name": "Red Berries",
+      "image": "//img.xssdcdn.com/odor/48908.jpg",
+      "description": "/qiwei/11048908-hongjiangguo-red-berries.html"
+    },
+    {
+      "name": "黑莓",
+      "english_name": "Blackberry",
+      "image": "//img.xssdcdn.com/odor/34835.jpg",
+      "description": "/qiwei/11034835-heimei-blackberry.html"
+    },
+    {
+      "name": "草莓",
+      "english_name": "Strawberry",
+      "image": "//img.xssdcdn.com/odor/77000.jpg",
+      "description": "/qiwei/11077000-caomei-strawberry.html"
+    },
+    {
+      "name": "香瓜",
+      "english_name": "Melon",
+      "image": "//img.xssdcdn.com/odor/39874.jpg",
+      "description": "/qiwei/11039874-xianggua-melon.html"
+    },
+    {
+      "name": "杏",
+      "english_name": "Apricot",
+      "image": "//img.xssdcdn.com/odor/18952.jpg",
+      "description": "/qiwei/11018952-xing-apricot.html"
+    },
+    {
+      "name": "百香果",
+      "english_name": "Passionfruit",
+      "image": "//img.xssdcdn.com/odor/38045.jpg",
+      "description": "/qiwei/11038045-baixiangguo-passionfruit.html"
+    },
+    {
+      "name": "板栗",
+      "english_name": "Chestnut",
+      "image": "//img.xssdcdn.com/odor/96752.jpg",
+      "description": "/qiwei/11096752-banli-chestnut.html"
+    },
+    {
+      "name": "红苹果",
+      "english_name": "Red Apple",
+      "image": "//img.xssdcdn.com/odor/74607.jpg",
+      "description": "/qiwei/11074607-hongpingguo-red-apple.html"
+    },
+    {
+      "name": "油桃",
+      "english_name": "Nectarine",
+      "image": "//img.xssdcdn.com/odor/87053.jpg",
+      "description": "/qiwei/11087053-youtao-nectarine.html"
+    },
+    {
+      "name": "酸樱桃",
+      "english_name": "Sour Cherry",
+      "image": "//img.xssdcdn.com/odor/31492.jpg",
+      "description": "/qiwei/11031492-suanyingtao-sour-cherry.html"
+    },
+    {
+      "name": "樱桃",
+      "english_name": "Cherry",
+      "image": "//img.xssdcdn.com/odor/28137.jpg",
+      "description": "/qiwei/11028137-yingtao-cherry.html"
+    },
+    {
+      "name": "杨梅",
+      "english_name": "Yumberry",
+      "image": "//img.xssdcdn.com/odor/87743.jpg",
+      "description": "/qiwei/11087743-yangmei-yumberry.html"
+    },
+    {
+      "name": "石榴",
+      "english_name": "Pomegranate",
+      "image": "//img.xssdcdn.com/odor/35803.jpg",
+      "description": "/qiwei/11035803-shiliu-pomegranate.html"
+    },
+    {
+      "name": "榛子",
+      "english_name": "Hazelnut",
+      "image": "//img.xssdcdn.com/odor/43738.jpg",
+      "description": "/qiwei/11043738-zhenzi-hazelnut.html"
+    },
+    {
+      "name": "干果",
+      "english_name": "Dried Fruits",
+      "image": "//img.xssdcdn.com/odor/39316.jpg",
+      "description": "/qiwei/11039316-ganguo-dried-fruits.html"
+    },
+    {
+      "name": "胡萝卜",
+      "english_name": "Carrot",
+      "image": "//img.xssdcdn.com/odor/52889.jpg",
+      "description": "/qiwei/11052889-huluobo-carrot.html"
+    },
+    {
+      "name": "红醋栗",
+      "english_name": "Red Currant",
+      "image": "//img.xssdcdn.com/odor/11893.jpg",
+      "description": "/qiwei/11011893-hongculi-red-currant.html"
+    },
+    {
+      "name": "青椒",
+      "english_name": "Green Pepper",
+      "image": "//img.xssdcdn.com/odor/64644.jpg",
+      "description": "/qiwei/11064644-qingjiao-green-pepper.html"
+    },
+    {
+      "name": "木梨",
+      "english_name": "Quince",
+      "image": "//img.xssdcdn.com/odor/51586.jpg",
+      "description": "/qiwei/11051586-muli-quince.html"
+    },
+    {
+      "name": "森林水果",
+      "english_name": "Forest fruits",
+      "image": "//img.xssdcdn.com/odor/96555.jpg",
+      "description": "/qiwei/11096555-senlinshuiguo-forest-fruits.html"
+    },
+    {
+      "name": "醋栗",
+      "english_name": "Gooseberry",
+      "image": "//img.xssdcdn.com/odor/91315.jpg",
+      "description": "/qiwei/11091315-culi-gooseberry.html"
+    },
+    {
+      "name": "热带水果",
+      "english_name": "Tropical Fruits",
+      "image": "//img.xssdcdn.com/odor/88634.jpg",
+      "description": "/qiwei/11088634-redaishuiguo-tropical-fruits.html"
+    },
+    {
+      "name": "蔓越莓",
+      "english_name": "Cranberry",
+      "image": "//img.xssdcdn.com/odor/75945.jpg",
+      "description": "/qiwei/11075945-manyuemei-cranberry.html"
+    },
+    {
+      "name": "香蕉",
+      "english_name": "Banana",
+      "image": "//img.xssdcdn.com/odor/43151.jpg",
+      "description": "/qiwei/11043151-xiangjiao-banana.html"
+    },
+    {
+      "name": "番石榴",
+      "english_name": "Guava",
+      "image": "//img.xssdcdn.com/odor/18011.jpg",
+      "description": "/qiwei/11018011-fanshiliu-guava.html"
+    },
+    {
+      "name": "杨桃",
+      "english_name": "Carambola (Star Fruit)",
+      "image": "//img.xssdcdn.com/odor/81057.jpg",
+      "description": "/qiwei/11081057-yangtao-carambola-star-fruit.html"
+    },
+    {
+      "name": "蓝莓",
+      "english_name": "Blueberry",
+      "image": "//img.xssdcdn.com/odor/30531.jpg",
+      "description": "/qiwei/11030531-lanmei-blueberry.html"
+    },
+    {
+      "name": "黄香李",
+      "english_name": "Mirabelle",
+      "image": "//img.xssdcdn.com/odor/75150.jpg",
+      "description": "/qiwei/11075150-huangxiangli-mirabelle.html"
+    },
+    {
+      "name": "人心果",
+      "english_name": "Sapodilla",
+      "image": "//img.xssdcdn.com/odor/11465.jpg",
+      "description": "/qiwei/11011465-renshenguo-sapodilla.html"
+    },
+    {
+      "name": "青梅",
+      "english_name": "Greengage",
+      "image": "//img.xssdcdn.com/odor/30216.jpg",
+      "description": "/qiwei/11030216-greengage.html"
+    },
+    {
+      "name": "开心果",
+      "english_name": "Pistachio",
+      "image": "//img.xssdcdn.com/odor/54893.jpg",
+      "description": "/qiwei/11054893-kaixinguo-pistachio.html"
+    },
+    {
+      "name": "猕猴桃",
+      "english_name": "Kiwi",
+      "image": "//img.xssdcdn.com/odor/24574.jpg",
+      "description": "/qiwei/11024574-mihoutao-kiwi.html"
+    },
+    {
+      "name": "西番莲",
+      "english_name": "Passion Flower",
+      "image": "//img.xssdcdn.com/odor/91005.jpg",
+      "description": "/qiwei/11091005-xifanlian-passion-flower.html"
+    },
+    {
+      "name": "红色水果",
+      "english_name": "Red Fruits",
+      "image": "//img.xssdcdn.com/odor/49803.jpg",
+      "description": "/qiwei/11049803-red-fruits.html"
+    },
+    {
+      "name": "花生",
+      "english_name": "Peanut",
+      "image": "//img.xssdcdn.com/odor/79139.jpg",
+      "description": "/qiwei/11079139-huasheng-peanut.html"
+    },
+    {
+      "name": "野生草莓",
+      "english_name": "Wild Strawberry",
+      "image": "//img.xssdcdn.com/odor/17511.jpg",
+      "description": "/qiwei/11017511-yeshengcaomei-wild-strawberry.html"
+    },
+    {
+      "name": "十大功劳",
+      "english_name": "Mahonia",
+      "image": "//img.xssdcdn.com/odor/86754.jpg",
+      "description": "/qiwei/11086754-mahonia.html"
+    },
+    {
+      "name": "核桃",
+      "english_name": "Walnut",
+      "image": "//img.xssdcdn.com/odor/83258.jpg",
+      "description": "/qiwei/11083258-hetao-walnut.html"
+    },
+    {
+      "name": "大麦",
+      "english_name": "Barley",
+      "image": "//img.xssdcdn.com/odor/90505.jpg",
+      "description": "/qiwei/11090505-damai-barley.html"
+    },
+    {
+      "name": "木瓜",
+      "english_name": "Papaya",
+      "image": "//img.xssdcdn.com/odor/38549.jpg",
+      "description": "/qiwei/11038549-mugua-papaya.html"
+    },
+    {
+      "name": "麦芽",
+      "english_name": "Malt",
+      "image": "//img.xssdcdn.com/odor/88437.jpg",
+      "description": "/qiwei/11088437-maiya-malt.html"
+    },
+    {
+      "name": "乌梅",
+      "english_name": "Dark Plum Wu Mei",
+      "image": "//img.xssdcdn.com/odor/34129.jpg",
+      "description": "/qiwei/11034129-dark-plum-wu-mei.html"
+    },
+    {
+      "name": "水润水果",
+      "english_name": "Water Fruit",
+      "image": "//img.xssdcdn.com/odor/55749.jpg",
+      "description": "/qiwei/11055749-water-fruit.html"
+    },
+    {
+      "name": "桑葚",
+      "english_name": "Mulberry",
+      "image": "//img.xssdcdn.com/odor/72134.jpg",
+      "description": "/qiwei/11072134-sangshen-mulberry.html"
+    }
+  ]
+}

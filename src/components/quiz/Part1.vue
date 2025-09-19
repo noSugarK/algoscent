@@ -11,7 +11,6 @@
         :value="option.value"
         v-model="answer"
         class="hidden"
-        @change="$emit('update')"
       />
       <div class="flex items-center">
         <span v-if="option.emoji" class="text-2xl mr-4">{{ option.emoji }}</span>

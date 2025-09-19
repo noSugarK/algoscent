@@ -21,7 +21,7 @@
       <!-- Quiz View -->
       <div v-else-if="currentQuestion" class="bg-white rounded-3xl shadow-xl p-8 md:p-10 border border-gray-100 animate-slideUp">
         <!-- Group Title -->
-        <div v-if="showGroupTitle" class="mb-8 text-center bg-gray-50 rounded-2xl p-6 -mx-8 md:-mx-10">
+        <div class="mb-8 text-center bg-gray-50 rounded-2xl p-6 -mx-8 md:-mx-10">
           <h2 class="text-2xl font-bold text-gray-800 mb-2">{{ currentGroup.title }}</h2>
           <p class="text-gray-600">{{ currentGroup.description }}</p>
         </div>
@@ -144,17 +144,6 @@ const currentGroup = computed(() => currentQuestion.value ? {
   title: currentQuestion.value.groupTitle,
   description: currentQuestion.value.groupDescription
 } : {})
-
-const showGroupTitle = computed(() => {
-  if (!currentQuestion.value) return false
-  const currentIndex = currentVisibleIndex.value
-  for (let i = currentIndex - 1; i >= 0; i--) {
-    if (visibleQuestions.value[i].groupId === currentQuestion.value.groupId) {
-      return false
-    }
-  }
-  return true
-})
 
 const visibleQuestionIndex = computed(() => currentVisibleIndex.value)
 const totalVisibleQuestions = computed(() => visibleQuestions.value.length)

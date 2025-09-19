@@ -12,14 +12,14 @@
           <ul class="space-y-2 text-gray-400">
             <li><router-link to="/" class="hover:text-white">首页</router-link></li>
             <li><router-link to="/quiz" class="hover:text-white">香氛测试</router-link></li>
-            <li><a href="#" class="hover:text-white">产品系列</a></li>
+            <li><router-link to="/product" class="hover:text-white">产品系列</router-link></li>
           </ul>
         </div>
         
         <div>
           <h4 class="font-semibold mb-4">关于我们</h4>
           <ul class="space-y-2 text-gray-400">
-            <li><a href="#" class="hover:text-white">品牌故事</a></li>
+            <li><router-link to="/about" class="hover:text-white">品牌故事</router-link></li>
             <li><a href="#" class="hover:text-white">联系我们</a></li>
           </ul>
         </div>

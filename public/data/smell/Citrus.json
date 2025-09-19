@@ -1,0 +1,254 @@
+{
+  "category": "柑橘类",
+  "category_english": "Citrus",
+  "category_image": "//img.xssdcdn.com/static/page/qw-ganjulei.jpg",
+  "description": "在香水业中，柑橘类香料指柑橘属植物的果实，或具有类似柑橘气味的香料（如香茅和马鞭草），柑橘类水果通常皮厚味浓，富含天然精油并容易萃取，所以柑橘类水果被独自划分为了一大类。其中一些作为香料很早以前就开始用来制作香水了，跟松香一样历史悠久，而一些则是现代香水业才开始使用的香料，如柚子，葡萄柚，日本柚子，八朔橘等，它们的精油是依靠现代科技才得以提炼的。\n\n柑橘类精油通常是通过冷压法提炼出的，用来保留其自身的清新气息。苦橙叶是个例外，它的精油是通过对苦橙树的枝叶蒸馏而得的。柑橘类香料能为香水增加一种清新怡人的特质，通常由于其高挥发性，而应用于香水的前调，挑逗我们的嗅觉。香柠檬更是制造经典古龙水不可或缺的香料之一。\n\n柑橘类酸酸甜甜的气味会让人心境开阔，怡然自得，让人联想起清爽干净的空气。柑橘类香料是花香香料，以及东方香调香水中树脂类香料的最佳伴侣。在果香调香水中使用，能够降低香水的甜腻度，并增加酸爽感。",
+  "notes": [
+    {
+      "name": "香柠檬",
+      "english_name": "Bergamot",
+      "image": "//img.xssdcdn.com/odor/19238.jpg",
+      "description": "/qiwei/11019238-foshougan-bergamot.html"
+    },
+    {
+      "name": "柠檬",
+      "english_name": "Lemon",
+      "image": "//img.xssdcdn.com/odor/55983.jpg",
+      "description": "/qiwei/11055983-ningmeng-lemon.html"
+    },
+    {
+      "name": "橘子",
+      "english_name": "Mandarin Orange",
+      "image": "//img.xssdcdn.com/odor/73807.jpg",
+      "description": "/qiwei/11073807-juzi-mandarin-orange.html"
+    },
+    {
+      "name": "葡萄柚",
+      "english_name": "Grapefruit",
+      "image": "//img.xssdcdn.com/odor/44755.jpg",
+      "description": "/qiwei/11044755-putaoyou-grapefruit.html"
+    },
+    {
+      "name": "橙子",
+      "english_name": "Orange",
+      "image": "//img.xssdcdn.com/odor/51575.jpg",
+      "description": "/qiwei/11051575-chengzi-orange.html"
+    },
+    {
+      "name": "橙花油",
+      "english_name": "Neroli",
+      "image": "//img.xssdcdn.com/odor/63688.jpg",
+      "description": "/qiwei/11063688-chenghuayou-neroli.html"
+    },
+    {
+      "name": "柑橘",
+      "english_name": "Citruses",
+      "image": "//img.xssdcdn.com/odor/19568.jpg",
+      "description": "/qiwei/11019568-ganju-citruses.html"
+    },
+    {
+      "name": "苦橙叶",
+      "english_name": "Petitgrain",
+      "image": "//img.xssdcdn.com/odor/38088.jpg",
+      "description": "/qiwei/11038088-kuchengye-petitgrain.html"
+    },
+    {
+      "name": "青柠",
+      "english_name": "Lime",
+      "image": "//img.xssdcdn.com/odor/19147.jpg",
+      "description": "/qiwei/11019147-qingning-lime.html"
+    },
+    {
+      "name": "苦橙",
+      "english_name": "Bitter Orange",
+      "image": "//img.xssdcdn.com/odor/80633.jpg",
+      "description": "/qiwei/11080633-kucheng-bitter-orange.html"
+    },
+    {
+      "name": "柚子",
+      "english_name": "Pomelo",
+      "image": "//img.xssdcdn.com/odor/45442.jpg",
+      "description": "/qiwei/11045442-youzi-pomelo.html"
+    },
+    {
+      "name": "日本柚子",
+      "english_name": "Yuzu",
+      "image": "//img.xssdcdn.com/odor/55560.jpg",
+      "description": "/qiwei/11055560-ribenyouzi-yuzu.html"
+    },
+    {
+      "name": "金橘",
+      "english_name": "Kumquat",
+      "image": "//img.xssdcdn.com/odor/71735.jpg",
+      "description": "/qiwei/11071735-jinju-kumquat.html"
+    },
+    {
+      "name": "蜜橘",
+      "english_name": "Tangerine",
+      "image": "//img.xssdcdn.com/odor/25423.jpg",
+      "description": "/qiwei/11025423-miju-tangerine.html"
+    },
+    {
+      "name": "柠檬马鞭草",
+      "english_name": "Lemon Verbena",
+      "image": "//img.xssdcdn.com/odor/92581.jpg",
+      "description": "/qiwei/11092581-ningmengmabiancao-lemon-verbena.html"
+    },
+    {
+      "name": "香橼",
+      "english_name": "Citron",
+      "image": "//img.xssdcdn.com/odor/18304.jpg",
+      "description": "/qiwei/11018304-xiangyuan-citron.html"
+    },
+    {
+      "name": "血橙",
+      "english_name": "Blood Orange",
+      "image": "//img.xssdcdn.com/odor/79797.jpg",
+      "description": "/qiwei/11079797-xuecheng-blood-orange.html"
+    },
+    {
+      "name": "克里曼丁红橘",
+      "english_name": "Clementine",
+      "image": "//img.xssdcdn.com/odor/66634.jpg",
+      "description": "/qiwei/11066634-kelimandinghongju-clementine.html"
+    },
+    {
+      "name": "柠檬皮",
+      "english_name": "Lemon Zest",
+      "image": "//img.xssdcdn.com/odor/84185.jpg",
+      "description": "/qiwei/11084185-lemon-zest.html"
+    },
+    {
+      "name": "香茅",
+      "english_name": "Lemongrass",
+      "image": "//img.xssdcdn.com/odor/30751.jpg",
+      "description": "/qiwei/11030751-ningmengcao-lemongrass.html"
+    },
+    {
+      "name": "青橘",
+      "english_name": "Green Tangerine",
+      "image": "//img.xssdcdn.com/odor/49302.jpg",
+      "description": "/qiwei/11049302-green-tangerine.html"
+    },
+    {
+      "name": "泰国青柠",
+      "english_name": "Kaffir Lime",
+      "image": "//img.xssdcdn.com/odor/94084.jpg",
+      "description": "/qiwei/11094084-kaffir-lime.html"
+    },
+    {
+      "name": "柠檬树",
+      "english_name": "Lemon tree",
+      "image": "//img.xssdcdn.com/odor/22575.jpg",
+      "description": "/qiwei/11022575-ningmengshu-lemon-tree.html"
+    },
+    {
+      "name": "奇诺托",
+      "english_name": "Chinotto",
+      "image": "//img.xssdcdn.com/odor/65276.jpg",
+      "description": "/qiwei/11065276-chinotto.html"
+    },
+    {
+      "name": "山苍树",
+      "english_name": "Litsea Cubeba",
+      "image": "//img.xssdcdn.com/odor/50989.jpg",
+      "description": "/qiwei/11050989-shancangshu-litsea-cubeba.html"
+    },
+    {
+      "name": "比加拉德",
+      "english_name": "Bigarade",
+      "image": "//img.xssdcdn.com/odor/42051.jpg",
+      "description": "/qiwei/11042051-bigarade.html"
+    },
+    {
+      "name": "柑橘水",
+      "english_name": "Citrus Water",
+      "image": "//img.xssdcdn.com/odor/91378.jpg",
+      "description": "/qiwei/11091378-citrus-water.html"
+    },
+    {
+      "name": "香蜂草",
+      "english_name": "Lemon Balm",
+      "image": "//img.xssdcdn.com/odor/95147.jpg",
+      "description": "/qiwei/11095147-xiangfengcao-lemon-balm.html"
+    },
+    {
+      "name": "手指橙",
+      "english_name": "Finger Lime",
+      "image": "//img.xssdcdn.com/odor/28017.jpg",
+      "description": "/qiwei/11028017-finger-lime.html"
+    },
+    {
+      "name": "圆柚甲烷",
+      "english_name": "Methyl Pamplemousse",
+      "image": "//img.xssdcdn.com/odor/33628.jpg",
+      "description": "/qiwei/11033628-yuanyoujiawan-methyl-pamplemousse.html"
+    },
+    {
+      "name": "曼多拉",
+      "english_name": "Mandora",
+      "image": "//img.xssdcdn.com/odor/35157.jpg",
+      "description": "/qiwei/11035157-mandora.html"
+    },
+    {
+      "name": "卡拉曼西",
+      "english_name": "Calamansi",
+      "image": "//img.xssdcdn.com/odor/39830.jpg",
+      "description": "/qiwei/11039830-calamansi.html"
+    },
+    {
+      "name": "蜜橘皮",
+      "english_name": "Tangerine Zest",
+      "image": "//img.xssdcdn.com/odor/63701.jpg",
+      "description": "/qiwei/11063701-tangerine-zest.html"
+    },
+    {
+      "name": "哈克拉橘",
+      "english_name": "Hatkora lemon",
+      "image": "//img.xssdcdn.com/odor/83969.jpg",
+      "description": "/qiwei/11083969-hakelaju-hatkora-lemon.html"
+    },
+    {
+      "name": "巴勒斯坦甜酸橙",
+      "english_name": "Palestinian Sweet Lime",
+      "image": "//img.xssdcdn.com/odor/11172.jpg",
+      "description": "/qiwei/11011172-palestinian-sweet-lime.html"
+    },
+    {
+      "name": "橘柚",
+      "english_name": "Tangelo",
+      "image": "//img.xssdcdn.com/odor/20188.jpg",
+      "description": "/qiwei/11020188-tangelo.html"
+    },
+    {
+      "name": "葡萄柚皮",
+      "english_name": "Grapefruit Peel",
+      "image": "//img.xssdcdn.com/odor/80087.jpg",
+      "description": "/qiwei/11080087-grapefruit-peel.html"
+    },
+    {
+      "name": "八朔橘",
+      "english_name": "Hassaku",
+      "image": "//img.xssdcdn.com/odor/48222.jpg",
+      "description": "/qiwei/11048222-bashuoju-hassaku.html"
+    },
+    {
+      "name": "扁平柠檬",
+      "english_name": "Shiikuwasha",
+      "image": "//img.xssdcdn.com/odor/42199.jpg",
+      "description": "/qiwei/11042199-shiikuwasha.html"
+    },
+    {
+      "name": "葡萄柚叶",
+      "english_name": "Grapefruit Leaf",
+      "image": "//img.xssdcdn.com/odor/29473.jpg",
+      "description": "/qiwei/11029473-grapefruit-leaf.html"
+    },
+    {
+      "name": "椪柑",
+      "english_name": "Pokan",
+      "image": "//img.xssdcdn.com/odor/94018.jpg",
+      "description": "/qiwei/11094018-pokan.html"
+    }
+  ]
+}

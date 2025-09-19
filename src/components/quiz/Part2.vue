@@ -12,7 +12,6 @@
         :value="option.value"
         v-model="answer"
         class="hidden"
-        @change="$emit('update')"
       />
       <div class="flex items-center">
         <span class="text-gray-800 font-medium">{{ option.label }}</span>
