@@ -1,5 +1,0 @@
-name = "algoscent"
-compatibility_date = "2025-09-19"
-
-[site]
-bucket = "./dist"
