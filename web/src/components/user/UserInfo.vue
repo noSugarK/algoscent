@@ -86,7 +86,7 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { useAccountStore } from '@/stores/account.js'
-import UserService from '@/services/user.service.js'
+import UserService from '@/api/user.api.js'
 import { ElMessage } from 'element-plus'
 
 const authStore = useAccountStore()

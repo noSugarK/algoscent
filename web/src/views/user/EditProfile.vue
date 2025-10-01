@@ -142,7 +142,7 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
-import UserService from '@/services/user.service.js'
+import UserService from '@/api/user.api.js'
 import AppHeader from '@/components/layout/AppHeader.vue'
 import AppFooter from '@/components/layout/AppFooter.vue'
 import { useRouter } from 'vue-router'

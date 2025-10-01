@@ -18,7 +18,7 @@
     "bootstrap": "^5.3.8",
     "bootstrap-icons": "^1.13.1",
     "crypto-js": "^4.2.0",
-    "element-plus": "^2.10.7",
+    "element-plus": "^2.11.1",
     "encryptlong": "^3.1.4",
     "pinia": "^3.0.3",
     "sass": "^1.90.0",
@@ -28,8 +28,14 @@
     "vue-router": "^4.5.1"
   },
   "devDependencies": {
+    "@tailwindcss/postcss": "^4.1.12",
     "@vitejs/plugin-vue": "^6.0.1",
     "vite": "^7.0.6",
-    "vite-plugin-vue-devtools": "^8.0.0"
+    "vite-plugin-vue-devtools": "^8.0.0",
+    "tailwindcss": "3.3.5",
+    "postcss": "8.4.31",
+    "eslint": "^8.57.1",
+    "eslint-plugin-vue": "^10.4.0",
+    "autoprefixer": "10.4.16"
   }
 }

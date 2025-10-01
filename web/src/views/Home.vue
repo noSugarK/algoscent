@@ -2,7 +2,7 @@
   <AppHeader />
   <Carousel />
   <HomeHero />
-  <Features />
+  <Perfume />
   <AppFooter />
 </template>
 
@@ -13,7 +13,7 @@ import AppHeader from "@/components/layout/AppHeader.vue"
 import AppFooter from "@/components/layout/AppFooter.vue"
 import Carousel from "@/components/home/Carousel.vue"
 import HomeHero from '@/components/home/HomeHero.vue'
-import Features from '@/components/home/Features.vue'
+import Perfume from '@/components/home/Perfume.vue'
 
 const accountStore = useAccountStore()
 
@@ -28,7 +28,7 @@ onMounted(async () => {
   }
   
   // 设置页面标题
-  document.title = '数据可视化平台 - 首页'
+  document.title = 'algoscent - Home'
 })
 </script>
 

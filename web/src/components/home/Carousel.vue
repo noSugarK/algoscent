@@ -32,7 +32,7 @@
           :src="slide.image" 
           class="d-block w-100" 
           :alt="slide.title" 
-          style="height: 25rem; object-fit: cover;"
+          style="height: auto; max-height: 30rem; object-fit: cover;"
         >
         <!-- 半透明遮罩层，悬停时显示 -->
         <div class="carousel-overlay"></div>
@@ -148,6 +148,10 @@ onMounted(() => {
 </script>
 
 <style scoped>
+.carousel {
+  margin: 0 auto; /* 居中 */
+}
+
 .carousel-item {
   transition: transform 0.6s ease-in-out;
   overflow: hidden;

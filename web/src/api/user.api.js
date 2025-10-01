@@ -1,6 +1,6 @@
 import api from './api'
 
-class UserService {
+class UserApi {
   // 获取当前用户信息
   async getProfile() {
     try {
@@ -102,4 +102,4 @@ class UserService {
   }
 }
 
-export default new UserService()
+export default new UserApi()

@@ -1,59 +1,52 @@
-<!-- src/components/layout/AppFooter.vue -->
 <template>
-  <div class="container">
-    <footer class="d-flex flex-wrap justify-content-between align-items-center py-3 my-4 border-top">
-      <p class="col-md-4 mb-0 text-muted">&copy; 2025 湖北市政集团. All rights reserved.</p>
+  <footer class="bg-success text-white py-12">
+    <div class="container mx-auto px-4">
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+        <div>
+          <h3 class="text-xl font-bold mb-4">疗愈香氛</h3>
+          <p class="text-gray-300">用自然香气治愈心灵，找回内心平静。</p>
+        </div>
 
-      <a href="/" class="col-md-4 d-flex align-items-center justify-content-center mb-3 mb-md-0 me-md-auto link-dark text-decoration-none">
-        <LogoHeader />
-      </a>
+        <div>
+          <h4 class="font-semibold mb-4">快速链接</h4>
+          <ul class="space-y-2 text-gray-300">
+            <li><router-link to="/" class="text-gray-300 hover:text-white no-underline">首页</router-link></li>
+            <li><router-link to="/quiz" class="text-gray-300 hover:text-white no-underline">香氛测试</router-link></li>
+            <li><router-link to="/product" class="text-gray-300 hover:text-white no-underline">产品系列</router-link></li>
+          </ul>
+        </div>
 
-      <ul class="nav col-md-4 justify-content-end">
-        <li class="nav-item"><a href="#" class="nav-link px-2 text-muted" @click.prevent="$router.push('/')">首页</a></li>
-        <li class="nav-item"><a href="#" class="nav-link px-2 text-muted" @click.prevent="$router.push('/about')">关于我们</a></li>
-        <li class="nav-item"><a href="#" class="nav-link px-2 text-muted" @click.prevent="$router.push('/contact')">联系我们</a></li>
-        <li class="nav-item"><a href="#" class="nav-link px-2 text-muted" @click.prevent="$router.push('/help')">帮助</a></li>
-      </ul>
-    </footer>
-  </div>
+        <div>
+          <h4 class="font-semibold mb-4">关于我们</h4>
+          <ul class="space-y-2 text-gray-300">
+            <li><router-link to="/about" class="text-gray-300 hover:text-white no-underline">品牌故事</router-link></li>
+            <li><a href="#" class="text-gray-300 hover:text-white no-underline">联系我们</a></li>
+          </ul>
+        </div>
+
+        <div>
+          <h4 class="font-semibold mb-4">关注我们</h4>
+          <div class="flex space-x-4">
+            <a href="#" class="text-gray-300 hover:text-green-600 transition">
+              <i class="fa-brands fa-weixin text-xl"></i>
+            </a>
+            <a href="#" class="text-gray-300 hover:text-orange-500 transition">
+              <i class="fa-brands fa-weibo text-xl"></i>
+            </a>
+            <a href="#" class="text-gray-300 hover:text-pink-600 transition">
+              <i class="fa-brands fa-instagram text-xl"></i>
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <div class="border-t border-gray-800 mt-8 pt-8 text-center text-dark">
+        <p>&copy; 2025 algoscent. All rights reserved.</p>
+      </div>
+    </div>
+  </footer>
 </template>
 
 <script setup>
-import LogoHeader from '../common/LogoHeader.vue'
+// 页脚组件
 </script>
-
-<style scoped>
-.logo :deep(.login-logo) {
-  width: 40px;
-  height: 32px;
-  margin: 0;
-}
-
-.logo :deep(h2) {
-  display: none;
-}
-
-.nav-link {
-  cursor: pointer;
-}
-
-.nav-link:hover {
-  color: #0d6efd !important;
-}
-
-.link-dark {
-  color: #212529 !important;
-}
-
-.link-dark:hover, .link-dark:focus {
-  color: #0d6efd !important;
-}
-
-.text-muted {
-  color: #6c757d !important;
-}
-
-.text-muted:hover {
-  color: #0d6efd !important;
-}
-</style>

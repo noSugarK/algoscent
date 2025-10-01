@@ -25,7 +25,7 @@ def generate_rsa_keys():
     )
 
     # 写入文件
-    keys_dir = os.path.join(os.path.dirname(__file__), '../account/keys')
+    keys_dir = os.path.join(os.path.dirname(__file__), 'apps/account/keys')
     os.makedirs(keys_dir, exist_ok=True)
 
     with open(os.path.join(keys_dir, 'private_key.pem'), 'wb') as f:

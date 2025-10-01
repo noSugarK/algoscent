@@ -3,7 +3,7 @@
   <div class="not-found-container">
     <div class="not-found-content">
       <h1 class="display-1">404</h1>
-      <h2>页面未找到</h2>
+      <h2>Not Found</h2>
       <p class="lead">抱歉，您访问的页面不存在。</p>
       <div class="mt-4">
         <router-link to="/" class="btn btn-primary me-2">返回首页</router-link>

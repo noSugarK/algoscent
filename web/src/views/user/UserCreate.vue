@@ -180,7 +180,7 @@
 import { ref, reactive, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import UserService from '@/services/user.service.js'
+import UserService from '@/api/user.api.js'
 import { useAccountStore } from '@/stores/account.js'
 import AppHeader from '@/components/layout/AppHeader.vue'
 import AppFooter from '@/components/layout/AppFooter.vue'

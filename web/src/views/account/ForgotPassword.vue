@@ -96,7 +96,7 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import AccountService from '@/services/account.services.js'
+import AccountService from '@/api/account.api.js'
 import LogoHeader from "@/components/common/LogoHeader.vue";
 import AccountFooter from "@/components/layout/AccountFooter.vue";
 
@@ -183,7 +183,6 @@ const resendEmail = () => {
   justify-content: center;
   align-items: center;
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   padding: 20px;
 }
 
@@ -192,7 +191,7 @@ const resendEmail = () => {
   max-width: 450px;
   padding: 2.5rem;
   border-radius: 15px;
-  background-color: rgba(255, 255, 255, 0.95);
+  background-color: rgb(244, 248, 240);
   backdrop-filter: blur(10px);
   box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
   animation: float 3s ease-in-out infinite;

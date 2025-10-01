@@ -96,7 +96,7 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import UserService from '@/services/user.service.js'
+import UserService from '@/api/user.api.js'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useAccountStore } from '@/stores/account.js'
 import AppHeader from '@/components/layout/AppHeader.vue'

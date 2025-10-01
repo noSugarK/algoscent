@@ -120,7 +120,7 @@ WSGI_APPLICATION = 'backend.wsgi.application'
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.mysql",
-        'NAME': 'hbsz-vue3',             # 替换为你的数据库名称
+        'NAME': 'algoscent',             # 替换为你的数据库名称
         'USER': 'root',             # 替换为你的数据库用户名
         'PASSWORD': '123456',       # 替换为你的数据库密码
         'HOST': 'localhost',        # 数据库服务器地址，通常是 localhost

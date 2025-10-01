@@ -123,7 +123,6 @@ class PasswordResetView(APIView):
 
         email = serializer.validated_data['email']
         user = USER.objects.get(email=email, is_active=True)
-        return Response({"message": "密码重置邮件已发送"}, status=status.HTTP_200_OK)
 
         # 生成重置链接
         uid = urlsafe_base64_encode(force_bytes(user.pk))

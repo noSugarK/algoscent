@@ -53,7 +53,7 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAccountStore } from '@/stores/account.js'
-import UserService from '@/services/user.service.js'
+import UserService from '@/api/user.api.js'
 import { ElMessage } from 'element-plus'
 import AppHeader from "@/components/layout/AppHeader.vue";
 
