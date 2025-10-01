@@ -6,7 +6,7 @@ ENV PATH /usr/local/python3/bin:$PATH
 RUN mkdir /backend
 WORKDIR /backend
 COPY ./backend/ .
-RUN chmod +x backend/docker_start.sh
+RUN chmod +x /backend/docker_start.sh
 
 RUN python -m pip install -i https://pypi.tuna.tsinghua.edu.cn/simple --upgrade pip
 RUN pip install -i https://pypi.tuna.tsinghua.edu.cn/simple --no-cache-dir -r requirements.txt
