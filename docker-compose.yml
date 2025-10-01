@@ -19,14 +19,14 @@ services:
     environment:
       - DATABASE_HOST=localhost
       - DATABASE_PORT=3306
-      - DATABASE_NAME=hbsz-vue3
+      - DATABASE_NAME=algoscent
       - DATABASE_USER=root
       - DATABASE_PASSWORD=123456
 
   web:
     container_name: web
     ports:
-      - "8080:8080"
+      - "5173:5173"
     build:
       context: ./
       dockerfile: ./docker_env/web/Dockerfile
