@@ -39,7 +39,7 @@ router.beforeEach((to, from, next) => {
 // 全局后置钩子，用于设置页面标题
 router.afterEach((to, from) => {
   // 设置页面标题
-  const appName = '材料成本可视化平台'
+  const appName = 'algoscent'
   const title = to.meta.title || '默认页面'
   document.title = `${appName} - ${title}`
 })
