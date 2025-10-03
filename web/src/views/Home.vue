@@ -3,6 +3,7 @@
   <Carousel />
   <HomeHero />
   <Perfume />
+  <Feedback />
   <AppFooter />
 </template>
 
@@ -14,6 +15,7 @@ import AppFooter from "@/components/layout/AppFooter.vue"
 import Carousel from "@/components/home/Carousel.vue"
 import HomeHero from '@/components/home/HomeHero.vue'
 import Perfume from '@/components/home/Perfume.vue'
+import Feedback from '@/components/home/Feedback.vue'
 
 const accountStore = useAccountStore()
 
