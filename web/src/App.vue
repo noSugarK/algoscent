@@ -8,7 +8,7 @@
 export default {
   data() {
     return {
-      // backgroundImage: 'url(./path/image.jpg)', // 动态背景图片路径
+      backgroundImage: 'url(./images/background.jpg)', // 动态背景图片路径
       backgroundColor: '#abe386' // 动态背景颜色
     }
   },

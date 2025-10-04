@@ -31,11 +31,27 @@ const router = createRouter({
 router.beforeEach((to, from, next) => {
   const authStore = useAccountStore()
 
+  // 检查是否需要访客状态
   if (to.meta.requiresGuest && authStore.isAuthenticated) {
     next('/')
-  } else {
-    next()
+    return
   }
+  
+  // 控制测验问题页面的访问
+  if (to.path === '/quiz/question') {
+    // 允许的来源：测验主页或历史记录页面，或者带有sessionId参数
+    const allowedFromPaths = ['/quiz', '/quiz/history']
+    const hasSessionId = to.query.sessionId !== undefined
+    
+    if (!allowedFromPaths.includes(from.path) && !hasSessionId) {
+      // 不允许直接访问，重定向到测验主页
+      next('/quiz')
+      return
+    }
+  }
+  
+  // 其他情况允许访问
+  next()
 })
 
 // 全局后置钩子，用于设置页面标题

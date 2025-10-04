@@ -50,6 +50,7 @@ INSTALLED_APPS = [
 
     'apps.account',
     'apps.users',
+    'apps.quiz',
 ]
 
 REST_FRAMEWORK = {
@@ -128,8 +129,6 @@ DATABASES = {
     }
 }
 
-# myproject/settings.py
-
 # 邮件配置 - 使用 QQ 邮箱 SMTP
 EMAIL_BACKEND = 'django_smtp_ssl.SSLEmailBackend'
 
@@ -190,3 +189,6 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# 阿里云百炼API配置
+DASHSCOPE_API_KEY = 'sk-##############'  # 请在此处设置你的阿里云百炼API密钥
