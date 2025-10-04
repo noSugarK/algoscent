@@ -101,15 +101,15 @@ import { ref, onMounted, onUnmounted } from 'vue'
 
 const images = ref([
   {
-    src: '/images/logo.png',
+    src: '/images/wxjb.jpg',
     alt: '疗愈香氛产品展示 1'
   },
   {
-    src: '/images/paperwall_2.jpg',
+    src: '/images/wxjb.jpg',
     alt: '疗愈香氛产品展示 2'
   },
   {
-    src: '/images/paperwall_2.jpg',
+    src: '/images/wxjb.jpg',
     alt: '疗愈香氛产品展示 3'
   }
 ])

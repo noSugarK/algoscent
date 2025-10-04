@@ -3,7 +3,7 @@
     <div class="container">
       <div class="d-flex flex-wrap align-items-center justify-content-center justify-content-lg-start py-2 mb-0">
         <!-- Logo -->
-        <a href="/" class="d-flex align-items-center me-md-auto text-white text-decoration-none">
+        <a class="navbar-brand d-flex align-items-center text-white" href="/">
           <LogoHeader />
         </a>
 

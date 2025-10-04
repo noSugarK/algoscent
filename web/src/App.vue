@@ -18,8 +18,8 @@ export default {
         backgroundImage: this.backgroundImage,
         backgroundColor: this.backgroundColor,
         backgroundSize: 'cover',
-        height: '100vh', // 视窗高度，确保背景覆盖整个页面
-        width: '100vw' // 视窗宽度
+        height: '100%', // 视窗高度，确保背景覆盖整个页面
+        width: '100%' // 视窗宽度
       };
     }
   }

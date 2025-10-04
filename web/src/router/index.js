@@ -5,12 +5,14 @@ import { useAccountStore } from '../stores/account.js'
 import accountRoutes from './account.routes.js'
 import mainRoutes from './main.routes.js'
 import userRoutes from './user.routes.js'
+import quizRoutes from './quiz.routes.js'
 
 // 合并所有路由
 const routes = [
   ...accountRoutes,
   ...mainRoutes,
   ...userRoutes,
+  ...quizRoutes,
   // 404 页面
   {
     path: '/:pathMatch(.*)*',

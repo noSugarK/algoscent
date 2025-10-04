@@ -1,6 +1,3 @@
-import { useAccountStore } from '../stores/account.js'
-
-// 用户相关路由
 const userRoutes = [
     {
         path: '/profile',

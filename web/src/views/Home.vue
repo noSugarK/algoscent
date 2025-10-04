@@ -1,9 +1,9 @@
 <template>
   <AppHeader />
-  <Carousel />
   <HomeHero />
   <Perfume />
   <Feedback />
+  <Process />
   <AppFooter />
 </template>
 
@@ -12,7 +12,7 @@ import { useAccountStore } from '../stores/account.js'
 import { onMounted } from 'vue'
 import AppHeader from "@/components/layout/AppHeader.vue"
 import AppFooter from "@/components/layout/AppFooter.vue"
-import Carousel from "@/components/home/Carousel.vue"
+import Process from "@/components/home/Process.vue"
 import HomeHero from '@/components/home/HomeHero.vue'
 import Perfume from '@/components/home/Perfume.vue'
 import Feedback from '@/components/home/Feedback.vue'
