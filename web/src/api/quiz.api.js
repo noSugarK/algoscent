@@ -83,15 +83,15 @@ export const checkIncompleteSession = async () => {
 // 继续未完成的测验会话
 export const resumeIncompleteSession = async (sessionId) => {
   try {
-    console.log('🔄 调用resumeIncompleteSession API，sessionId:', sessionId)
+    // console.log('🔄 调用resumeIncompleteSession API，sessionId:', sessionId)
     // 获取会话详情（包含答案信息）
     const response = await api.get(`/quiz/sessions/${sessionId}/`)
-    console.log('✅ 从后端获取的原始数据:', response.data)
+    // console.log('✅ 从后端获取的原始数据:', response.data)
     
     // 构建前端需要的答案格式
     const answerMap = {};
     if (response.data.answers && Array.isArray(response.data.answers)) {
-      console.log('📊 处理答案数据，数组长度:', response.data.answers.length)
+      // console.log('📊 处理答案数据，数组长度:', response.data.answers.length)
       response.data.answers.forEach(answer => {
         // 将答案对象转换为前端需要的格式
         // 检查value是否为JSON字符串，如果是则解析
@@ -106,17 +106,17 @@ export const resumeIncompleteSession = async (sessionId) => {
           console.warn('解析答案值失败:', e);
         }
         answerMap[answer.question_id] = answerValue;
-        console.log('🔑 映射问题ID:', answer.question_id, '到答案:', answerValue)
+        // console.log('🔑 映射问题ID:', answer.question_id, '到答案:', answerValue)
       });
     }
     
-    console.log('✅ 构建的答案映射对象:', answerMap)
+    // console.log('✅ 构建的答案映射对象:', answerMap)
     return {
       session: response.data,
       answers: answerMap
     }
   } catch (error) {
-    console.error('继续会话失败:', error)
+    // console.error('继续会话失败:', error)
     throw error
   }
 }

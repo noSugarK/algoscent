@@ -1,7 +1,7 @@
 <template>
   <div class="space-y-4">
     <label
-        v-for="option in question.options"
+        v-for="option in (question.shuffledOptions || question.options)"
         :key="option.value"
         class="block p-5 border-2 border-gray-200 rounded-2xl cursor-pointer hover:border-indigo-300 hover:shadow-md transition-all duration-200 transform hover:-translate-y-1"
         :class="answer === option.value ? 'border-indigo-500 bg-indigo-50' : ''"

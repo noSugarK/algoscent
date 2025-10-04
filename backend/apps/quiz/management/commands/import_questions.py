@@ -204,11 +204,11 @@ class Command(BaseCommand):
                         "text": "与他人相比，您觉得自己的鼻子灵敏吗？",
                         "type": "single",
                         "options": [
-                            {"label": "比大多数人灵敏得多（低阈值）", "value": "A", "emoji": "🐕"},
+                            {"label": "比大多数人灵敏得多", "value": "A", "emoji": "🐕"},
                             {"label": "比大多数人稍微灵敏一点", "value": "B", "emoji": "👃"},
                             {"label": "和大多数人差不多", "value": "C", "emoji": "🙂"},
                             {"label": "比大多数人稍微迟钝一点", "value": "D", "emoji": "🧐"},
-                            {"label": "比大多数人迟钝得多（高阈值）", "value": "E", "emoji": "😴"}
+                            {"label": "比大多数人迟钝得多", "value": "E", "emoji": "😴"}
                         ]
                     },
                     {
@@ -216,10 +216,10 @@ class Command(BaseCommand):
                         "text": "在以下场景中，您对他人身上过浓的香水味反应是？",
                         "type": "single",
                         "options": [
-                            {"label": "非常反感，感到头晕不适（低阈值）", "value": "A", "emoji": "😵‍💫"},
+                            {"label": "非常反感，感到头晕不适", "value": "A", "emoji": "😵‍💫"},
                             {"label": "有点不舒服，会刻意避开", "value": "B", "emoji": "😷"},
                             {"label": "无所谓，不太在意", "value": "C", "emoji": "😶"},
-                            {"label": "挺喜欢的，会注意到香味（高阈值）", "value": "D", "emoji": "😍"}
+                            {"label": "挺喜欢的，会注意到香味", "value": "D", "emoji": "😍"}
                         ]
                     },
                     {
@@ -287,7 +287,12 @@ class Command(BaseCommand):
                     'text': question_data['text'],
                     'type': question_data['type'],
                     'sort_order': i,
-                    'show_text_when': question_data.get('showTextWhen', None)
+                    'show_text_when': question_data.get('showTextWhen', None),
+                    # 根据题目类型设置默认的最小和最大选择数
+                    'min_selection': question_data.get('minSelection', 1),
+                    'max_selection': question_data.get('maxSelection', 
+                        3 if question_data['type'] in ['multiple', 'image-multiple'] else 1
+                    )
                 }
                 
                 # 创建题目

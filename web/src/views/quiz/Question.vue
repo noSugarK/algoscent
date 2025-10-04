@@ -120,6 +120,16 @@ import Text from '@/components/quiz/Text.vue'
 import AppHeader from "@/components/layout/AppHeader.vue";
 import AppFooter from "@/components/layout/AppFooter.vue";
 
+// 打乱数组顺序的工具函数
+const shuffleArray = (array) => {
+  const newArray = [...array];
+  for (let i = newArray.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+  }
+  return newArray;
+}
+
 // 接收初始会话数据
 const props = defineProps({
   initialSession: {
@@ -164,17 +174,17 @@ const initQuestions = async () => {
   try {
     // 检查路由参数中是否有sessionId
     const sessionIdFromRoute = route.query.sessionId
-    console.log('🔍 检查路由参数sessionId:', sessionIdFromRoute)
+    // console.log('🔍 检查路由参数sessionId:', sessionIdFromRoute)
     
     // 如果有sessionId参数，尝试恢复会话
     if (sessionIdFromRoute) {
       try {
-        console.log('🔄 尝试恢复会话:', sessionIdFromRoute)
+        // console.log('🔄 尝试恢复会话:', sessionIdFromRoute)
         const result = await resumeIncompleteSession(sessionIdFromRoute)
-        console.log('✅ 恢复会话数据:', result)
+        // console.log('✅ 恢复会话数据:', result)
         loadedSessionData.value = result
       } catch (sessionError) {
-        console.error('恢复会话失败:', sessionError)
+        // console.error('恢复会话失败:', sessionError)
         error.value = '恢复会话失败，开始新会话'
         // 继续执行，会自动创建新会话
       }
@@ -215,6 +225,11 @@ const initQuestions = async () => {
         // 确保questions存在且为数组
         if (group.questions && Array.isArray(group.questions)) {
           group.questions.forEach(q => {
+            // 优先使用数据库中的max_selection字段，兼容maxSelection
+            // console.log(q)
+            const calculatedMaxSelection = q.max_selection || q.maxSelection;
+            // console.log(`🔧 初始化题目ID: ${q.id}, 类型: ${q.type}, max_selection: ${q.max_selection}, maxSelection: ${q.maxSelection}, calculatedMaxSelection: ${calculatedMaxSelection}`);
+            
             allQuestionsWithGroup.value.push({
               id: q.id,
               groupId: group.id,
@@ -226,7 +241,7 @@ const initQuestions = async () => {
               type: q.type,
               options: q.options || [],
               minSelection: q.minSelection || 1,
-              maxSelection: q.maxSelection || 1,
+              maxSelection: calculatedMaxSelection,
               showTextWhen: q.showTextWhen,
               condition: q.condition
             })
@@ -236,11 +251,11 @@ const initQuestions = async () => {
     }
     
     // 检查是否有初始会话数据（继续之前的会话）
-    console.log('🔍 检查初始会话数据 - props.initialSession:', props.initialSession)
-    console.log('🔍 检查初始会话数据 - loadedSessionData.value:', loadedSessionData.value)
+    // console.log('🔍 检查初始会话数据 - props.initialSession:', props.initialSession)
+    // console.log('🔍 检查初始会话数据 - loadedSessionData.value:', loadedSessionData.value)
     
     if ((props.initialSession && props.initialSession.session_id) || loadedSessionData.value) {
-      console.log('✅ 检测到会话数据，准备恢复')
+      // console.log('✅ 检测到会话数据，准备恢复')
       // 使用之前的会话ID
       const sessionData = props.initialSession || loadedSessionData.value
       
@@ -249,18 +264,18 @@ const initQuestions = async () => {
       
       // 检查数据格式，确保正确提取数据
       if (sessionData.session) {
-        console.log('📋 使用resumeIncompleteSession返回的格式')
+        // console.log('📋 使用resumeIncompleteSession返回的格式')
         // 这是从resumeIncompleteSession返回的格式
         sessionId.value = sessionData.session.session_id
         startTime.value = sessionData.session.start_time ? new Date(sessionData.session.start_time).getTime() : Date.now()
         
         // 正确处理answerMap格式的答案数据
         if (sessionData.answers && typeof sessionData.answers === 'object') {
-          console.log('📥 加载答案数据:', sessionData.answers)
+          // console.log('📥 加载答案数据:', sessionData.answers)
           answers.value = {...sessionData.answers}
         } else if (sessionData.session.answers && Array.isArray(sessionData.session.answers)) {
           // 处理直接包含在session对象中的答案数组
-          console.log('📥 加载嵌套在session中的答案数组:', sessionData.session.answers)
+          // console.log('📥 加载嵌套在session中的答案数组:', sessionData.session.answers)
           sessionData.session.answers.forEach(answer => {
             if (answer.question_id) {
               answers.value[answer.question_id] = answer.value;
@@ -270,7 +285,7 @@ const initQuestions = async () => {
         
         loadedSessionData.value = sessionData.session
       } else {
-        console.log('📋 使用props或其他方式传递的格式')
+        // console.log('📋 使用props或其他方式传递的格式')
         // 这是从props或其他方式传递的格式
         sessionId.value = sessionData.session_id
         startTime.value = sessionData.start_time ? new Date(sessionData.start_time).getTime() : Date.now()
@@ -285,9 +300,9 @@ const initQuestions = async () => {
       
       // 验证答案数据是否正确加载
       if (Object.keys(answers.value).length > 0) {
-        console.log('✅ 恢复会话成功，已加载答案数:', Object.keys(answers.value).length)
-        console.log('✅ 当前会话ID:', sessionId.value)
-        console.log('✅ 加载的答案键:', Object.keys(answers.value))
+        // console.log('✅ 恢复会话成功，已加载答案数:', Object.keys(answers.value).length)
+        // console.log('✅ 当前会话ID:', sessionId.value)
+        // console.log('✅ 加载的答案键:', Object.keys(answers.value))
       } else {
         console.log('⚠️ 未加载到任何答案数据')
       }
@@ -310,11 +325,12 @@ const initQuestions = async () => {
     if (Object.keys(answers.value).length > 0) {
       // 找到最后回答的题目
       const answeredQuestions = Object.keys(answers.value)
+      // console.log(answeredQuestions)
       // 找到该题目在visibleQuestions中的索引
       const lastAnsweredIndex = visibleQuestions.value.findIndex(q => answeredQuestions.includes(q.id))
       if (lastAnsweredIndex !== -1 && lastAnsweredIndex < visibleQuestions.value.length - 1) {
         // 如果找到且不是最后一题，设置为下一题
-        currentVisibleIndex.value = lastAnsweredIndex + 1
+        currentVisibleIndex.value = answeredQuestions.length - 1
         console.log('✅ 定位到未完成题目位置:', currentVisibleIndex.value + 1)
         // 确保加载对应的题目状态
         setTimeout(() => loadCurrentQuestionState(), 100)
@@ -415,6 +431,15 @@ const loadCurrentQuestionState = () => {
   const q = currentQuestion.value
   if (!q) return
 
+  // showTextWhen属性的处理现在在SingleWithText.vue组件内部进行，避免直接修改props
+
+  // 打乱选择题选项顺序
+  if (q.options && Array.isArray(q.options) && 
+      (q.type === 'single' || q.type === 'multiple' || q.type === 'single-with-text')) {
+    // 为了保持答案一致性，我们在打乱前创建一个副本
+    q.shuffledOptions = shuffleArray([...q.options])
+  }
+
   const saved = answers.value[q.id]
   if (q.type === 'single' || q.type === 'image-single') {
     tempAnswer.value = saved?.value || ''
@@ -426,7 +451,7 @@ const loadCurrentQuestionState = () => {
       try {
         // 尝试解析字符串格式的数组
         const parsed = JSON.parse(saved)
-        tempMultiAnswer.value = Array.isArray(parsed) ? parsed : []
+        tempMultiAnswer.value = Array.isArray(parsed) ? [...parsed] : []
       } catch {
         tempMultiAnswer.value = []
       }
@@ -477,6 +502,13 @@ const saveAnswer = async () => {
 }
 
 const onAnswerUpdate = () => {
+  console.log('📝 答案更新通知收到:', {
+    currentQuestionId: currentQuestion.value?.id,
+    tempMultiAnswer: [...tempMultiAnswer.value],
+    isAnswered: isAnswered.value
+  });
+  // 显式保存答案，确保更新被正确处理
+  // saveAnswer(); - 注释掉自动保存，避免频繁请求
 }
 
 const nextQuestion = async () => {

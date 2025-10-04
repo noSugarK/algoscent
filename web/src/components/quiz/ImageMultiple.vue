@@ -21,9 +21,9 @@
         <p class="text-xs font-medium text-gray-800 text-center">{{ option.label }}</p>
       </div>
     </button>
-    <div v-if="multiAnswer.length > (question.maxSelection || 3)"
+    <div v-if="multiAnswer.length > (question.max_selection || question.maxSelection)"
          class="col-span-full text-center mt-2 text-red-500 text-sm">
-      ⚠️ 最多选择 {{ question.maxSelection || 3 }} 项
+      ⚠️ 最多选择 {{ question.max_selection || question.maxSelection }} 项
     </div>
   </div>
 </template>
@@ -33,12 +33,21 @@ const props = defineProps(['question'])
 const multiAnswer = defineModel('multiAnswer')
 
 const toggleOption = (value) => {
-  const max = props.question.maxSelection || 3
+  // 添加调试日志
+  // console.log('🔍 当前问题ID:', props.question.id);
+  // console.log('🔍 当前问题类型:', props.question.type);
+  // console.log('🔍 配置的maxSelection:', props.question.maxSelection);
+  // console.log('🔍 配置的max_selection:', props.question.max_selection);
+
+  // 优先使用数据库中的max_selection字段，兼容maxSelection
+  const max = props.question.max_selection || props.question.maxSelection
   if (multiAnswer.value.includes(value)) {
-    multiAnswer.value = multiAnswer.value.filter(v => v !== value)
+    // 取消选择 - 创建新数组引用
+    multiAnswer.value = [...multiAnswer.value.filter(v => v !== value)]
   } else {
+    // 选择（未超限） - 创建新数组引用
     if (multiAnswer.value.length < max) {
-      multiAnswer.value.push(value)
+      multiAnswer.value = [...multiAnswer.value, value]
     }
   }
   emit('update')
