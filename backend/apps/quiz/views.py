@@ -199,6 +199,8 @@ class UserQuizSessionViewSet(
                 
                 # 初始化选项文本
                 option_label = None
+                # 初始化选项标签列表（用于多选题）
+                option_labels = []
                 
                 # 如果答案是对象并且有value字段（如{"value": "E"}）
                 if isinstance(value, dict) and 'value' in value:
@@ -214,12 +216,21 @@ class UserQuizSessionViewSet(
                         if option.value == value:
                             option_label = option.label
                             break
+                # 如果答案是数组（多选题）
+                elif isinstance(value, list):
+                    for answer_item in value:
+                        for option in answer.question.options.all():
+                            if option.value == answer_item:
+                                option_labels.append(option.label)
+                                break
                 
                 report['answers'][answer.question.id] = {
+                    'question_type': answer.question.type,  # 添加题目类型
                     'value': value,
                     'text': answer.text,
                     'question_text': answer.question.text,
-                    'option_label': option_label
+                    'option_label': option_label,
+                    'option_labels': option_labels,  # 用于多选题的所有选项标签
                 }
             
             return Response(report)

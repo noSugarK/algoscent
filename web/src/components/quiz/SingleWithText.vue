@@ -53,8 +53,7 @@ const showTextWhen = ref(props.question.showTextWhen || '')
 
 // 监听question变化，更新showTextWhen
 watchEffect(() => {
-  // 针对第19题(q2-9)的特殊处理
-  if (props.question.id === 'q2-9' && !props.question.showTextWhen) {
+  if (!props.question.showTextWhen) {
     showTextWhen.value = 'yes'
   } else {
     showTextWhen.value = props.question.showTextWhen || ''

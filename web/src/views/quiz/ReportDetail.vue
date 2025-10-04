@@ -136,10 +136,41 @@
                   </span>
                 </div>
                 <div class="ml-4">
-                  <span class="text-sm text-gray-600">你的回答: </span>
                   <span class="text-sm font-medium text-indigo-600">
-                    <!-- 优先显示选项文本，如果没有则显示原始值 -->
-                    {{ answer.option_label || (answer.value !== null && answer.value !== undefined ? JSON.stringify(answer.value) : '无回答') }}
+                    <!-- 根据题目类型显示不同的回答内容 -->
+                    <template v-if="answer.question_type === 'multiple'">
+                      <!-- 多选题，分点显示 -->
+                      <div v-if="answer.option_labels && answer.option_labels.length > 0">
+                        <div v-for="(label, index) in answer.option_labels" :key="index" class="flex items-start mt-1">
+                          <span class="mr-2 text-indigo-500">•</span>
+                          <span>{{ label }}</span>
+                        </div>
+                      </div>
+                      <div v-else-if="Array.isArray(answer.value)">
+                        <div v-for="(value, index) in answer.value" :key="index" class="flex items-start mt-1">
+                          <span class="mr-2 text-indigo-500">•</span>
+                          <span>{{ value }}</span>
+                        </div>
+                      </div>
+                      <div v-else>
+                        {{ answer.option_label || (answer.value !== null && answer.value !== undefined ? JSON.stringify(answer.value) : '无回答') }}
+                      </div>
+                    </template>
+                    <template v-else-if="answer.question_type === 'single-with-text'">
+                      <!-- 单选填空题，显示选择和填空内容 -->
+                      <div class="flex items-start">
+                        <span>{{ answer.option_label || (typeof answer.value === 'object' ? answer.value.value : answer.value) }}</span>
+                        <template v-if="(typeof answer.value === 'object' && answer.value.text && answer.value.text.trim()) || (answer.text && answer.text.trim())">
+                          <span class="ml-2 px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded text-xs">
+                            填空：{{ (typeof answer.value === 'object' && answer.value.text) || answer.text }}
+                          </span>
+                        </template>
+                      </div>
+                    </template>
+                    <template v-else>
+                      <!-- 其他题型，使用默认显示 -->
+                      {{ answer.option_label || (answer.value !== null && answer.value !== undefined ? JSON.stringify(answer.value) : '无回答') }}
+                    </template>
                   </span>
                 </div>
               </div>

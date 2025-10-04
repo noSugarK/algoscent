@@ -482,11 +482,11 @@ const saveAnswer = async () => {
     answerData = [...tempMultiAnswer.value]
     answers.value[q.id] = answerData
   } else if (q.type === 'single-with-text') {
-    answerData = {
-      value: tempAnswer.value,
-      text: tempAnswer.value === q.showTextWhen ? tempTextAnswer.value : ''
-    }
-    answers.value[q.id] = answerData
+      answerData = {
+        value: tempAnswer.value,
+        text: (tempAnswer.value === q.showTextWhen || tempAnswer.value === 'yes') ? tempTextAnswer.value : ''
+      }
+      answers.value[q.id] = answerData
   } else if (q.type === 'text') {
     answerData = tempTextAnswer.value
     answers.value[q.id] = answerData
