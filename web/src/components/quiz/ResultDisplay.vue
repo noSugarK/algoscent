@@ -87,18 +87,20 @@
 
 <script setup>
 import { computed, ref } from 'vue'
+import { useRouter } from 'vue-router'
 
 const props = defineProps({
   report: Object
 })
 
 const emit = defineEmits(['restart', 'submit'])
+const router = useRouter()
 const showDetails = ref(false)
 
 const onRestart = () => emit('restart')
 const onSubmit = () => emit('submit')
 const onHistory = () => {
-  // router.push('/quiz/history') // 可选：启用路由跳转
+  router.push('/quiz/history') // 可选：启用路由跳转
 }
 
 const simpleAnswers = computed(() => {
