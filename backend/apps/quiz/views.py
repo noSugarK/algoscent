@@ -239,6 +239,66 @@ class UserQuizSessionViewSet(
                 {'detail': '会话不存在。'},
                 status=status.HTTP_404_NOT_FOUND
             )
+    
+    @action(detail=True, methods=['post'], url_path='submit-first-20')
+    def submit_first_20(self, request, session_id=None):
+        """提交前20题答案并获取香调偏好"""
+        try:
+            instance = self.get_object()
+            # 检查会话是否在进行中
+            if instance.status != 'in_progress':
+                return Response(
+                    {'detail': '该会话已结束，无法提交答案。'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            # 获取提交的前20题答案
+            answers = request.data.get('answers', {})
+            
+            # 这里应该实现根据答案分析用户香调偏好的逻辑
+            # 由于这是示例实现，我们返回一些模拟的香调图片数据
+            fragrance_images = [
+                {
+                    'id': 'floral',
+                    'name': '花香调',
+                    'image_url': '/images/smell/花卉类（除白色花卉）/三叶草.png'
+                },
+                {
+                    'id': 'white_floral',
+                    'name': '白色花香调',
+                    'image_url': '/images/smell/白色花卉/亚马逊月光花.png'
+                },
+                {
+                    'id': 'woody',
+                    'name': '木质调',
+                    'image_url': '/images/smell/树木、苔藓/云杉.png'
+                },
+                {
+                    'id': 'citrus',
+                    'name': '柑橘调',
+                    'image_url': '/images/smell/柑橘类/克里曼丁红橘.png'
+                },
+                {
+                    'id': 'spicy',
+                    'name': '辛辣调',
+                    'image_url': '/images/smell/辛香料/八角.png'
+                },
+                {
+                    'id': 'green',
+                    'name': '草本绿叶调',
+                    'image_url': '/images/smell/草本、绿叶/不凋花.png'
+                }
+            ]
+            
+            # 返回香调图片数据
+            return Response({
+                'fragrance_images': fragrance_images
+            })
+        except UserQuizSession.DoesNotExist:
+            return Response(
+                {'detail': '会话不存在。'},
+                status=status.HTTP_404_NOT_FOUND
+            )
 
 class UserAnswerViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
     """用户答题记录视图集"""

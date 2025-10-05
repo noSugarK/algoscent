@@ -2,7 +2,7 @@
   <div class="text-question">
     <div class="textarea-container">
       <textarea
-        v-model="localTextAnswer"
+        v-model="textAnswer"
         :placeholder="question.placeholder || '请在此输入您的答案...'"
         class="w-full p-4 border border-gray-300 rounded-xl resize-y min-h-[120px] transition-all focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 focus:outline-none"
         @input="handleInput"
@@ -12,11 +12,11 @@
     <div class="flex justify-end mt-3">
       <button
         @click="handleAIExtend"
-        :disabled="!localTextAnswer.trim() || loading"
+        :disabled="!textAnswer?.trim() || loading"
         class="flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors"
         :class="{
-          'bg-gradient-to-r from-indigo-500 to-purple-500 text-white hover:from-indigo-600 hover:to-purple-600': localTextAnswer.trim() && !loading,
-          'bg-gray-200 text-gray-400 cursor-not-allowed': !localTextAnswer.trim() || loading
+          'bg-gradient-to-r from-indigo-500 to-purple-500 text-white hover:from-indigo-600 hover:to-purple-600': textAnswer?.trim() && !loading,
+          'bg-gray-200 text-gray-400 cursor-not-allowed': !textAnswer?.trim() || loading
         }"
       >
         <svg v-if="!loading" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -33,46 +33,35 @@
 </template>
 
 <script setup>
-import {ref, watch} from 'vue'
+import {ref} from 'vue'
 import {extendTextWithAI} from '@/api/quiz.api.js'
 
 const props = defineProps({
   question: {
     type: Object,
     required: true
-  },
-  textAnswer: {
-    type: String,
-    default: ''
   }
 })
 
-const emit = defineEmits(['update:textAnswer'])
-
-const localTextAnswer = ref(props.textAnswer)
+// 使用defineModel实现双向绑定，与SingleWithText.vue保持一致
+const textAnswer = defineModel('textAnswer')
+const emit = defineEmits(['update'])
 const loading = ref(false)
 
-// 监听props变化，更新本地值
-watch(
-  () => props.textAnswer,
-  (newVal) => {
-    localTextAnswer.value = newVal
-  }
-)
-
 const handleInput = () => {
-  emit('update:textAnswer', localTextAnswer.value)
+  // 使用update事件通知父组件
+  emit('update')
 }
 
 const handleAIExtend = async () => {
-  if (!localTextAnswer.value.trim() || loading.value) return
+  if (!textAnswer.value?.trim() || loading.value) return
   
   loading.value = true
   try {
-    const result = await extendTextWithAI(localTextAnswer.value)
+    const result = await extendTextWithAI(textAnswer.value)
     if (result && result.extended_text) {
-      localTextAnswer.value = result.extended_text
-      emit('update:textAnswer', localTextAnswer.value)
+      textAnswer.value = result.extended_text
+      emit('update')
     }
   } catch (error) {
     console.error('AI扩写失败:', error)

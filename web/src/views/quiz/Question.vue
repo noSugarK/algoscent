@@ -107,7 +107,7 @@
 <script setup>
 import {ref, computed, onMounted, watch, markRaw} from 'vue'
 import {useRoute} from 'vue-router'
-import {getQuestionGroups, createQuizSession, saveUserAnswer, completeQuizSession, resumeIncompleteSession} from '@/api/quiz.api.js'
+import {getQuestionGroups, createQuizSession, saveUserAnswer, completeQuizSession, resumeIncompleteSession, submitFirst20Questions} from '@/api/quiz.api.js'
 import ResultDisplay from '@/components/quiz/ResultDisplay.vue'
 
 // 题型组件
@@ -149,6 +149,8 @@ const sessionId = ref('')
 const loading = ref(false)
 const error = ref('')
 const loadedSessionData = ref(null)
+const isFirst20Submitted = ref(false)
+const fragranceImageQuestion = ref(null)
 
 // 路由
 const route = useRoute()
@@ -373,6 +375,12 @@ const updateVisibleQuestions = () => {
       result.push(q)
     }
   }
+  
+  // 如果已经提交了前20题并且香调图片题目存在，则添加到题目列表末尾
+  if (isFirst20Submitted.value && fragranceImageQuestion.value && result.length === 20) {
+    result.push(fragranceImageQuestion.value)
+  }
+  
   visibleQuestions.value = result
   if (currentVisibleIndex.value >= visibleQuestions.value.length && visibleQuestions.value.length > 0) {
     currentVisibleIndex.value = visibleQuestions.value.length - 1
@@ -458,13 +466,36 @@ const loadCurrentQuestionState = () => {
     } else {
       tempMultiAnswer.value = []
     }
-  } else if (q.type === 'single-with-text' || q.type === 'text') {
-    if (saved) {
+  } else if (q.type === 'single-with-text') {
+    if (saved && typeof saved === 'object') {
       tempAnswer.value = saved.value || ''
       tempTextAnswer.value = saved.text || ''
     } else {
       tempAnswer.value = ''
       tempTextAnswer.value = ''
+    }
+  } else if (q.type === 'text') {
+    // 对于纯文本类型题目，处理可能的JSON嵌套字符串
+    if (typeof saved === 'string') {
+      try {
+        // 尝试解析可能嵌套的JSON字符串
+        const parsed = JSON.parse(saved);
+        // 如果解析结果是对象，尝试获取其value或text属性
+        if (typeof parsed === 'object') {
+          tempTextAnswer.value = parsed.value || parsed.text || '';
+        } else {
+          // 否则使用解析后的值
+          tempTextAnswer.value = parsed;
+        }
+      } catch (e) {
+        // 如果解析失败，使用原始字符串
+        tempTextAnswer.value = saved;
+      }
+    } else if (saved && typeof saved === 'object') {
+      // 如果saved是对象，尝试获取其value或text属性
+      tempTextAnswer.value = saved.value || saved.text || '';
+    } else {
+      tempTextAnswer.value = saved || '';
     }
   }
 }
@@ -518,15 +549,57 @@ const nextQuestion = async () => {
   try {
     await saveAnswer()
 
-    if (currentVisibleIndex.value === totalVisibleQuestions.value - 1) {
+    // 检查是否是在第20题之后点击下一题且尚未提交前20题答案
+    if (currentVisibleIndex.value === 19 && !isFirst20Submitted.value) {
+      // 提交前20题答案
+      const first20Answers = {}
+      for (let i = 0; i < 20; i++) {
+        const questionId = visibleQuestions.value[i].id
+        if (answers.value[questionId] !== undefined) {
+          first20Answers[questionId] = answers.value[questionId]
+        }
+      }
+      
+      // 调用API提交前20题答案并获取香调图片数据
+      const fragranceResponse = await submitFirst20Questions(sessionId.value, first20Answers)
+      
+      // 创建第21题：香调图片多选题
+      fragranceImageQuestion.value = {
+        id: 'fragrance-image-question',
+        groupId: 'fragrance-group',
+        groupTitle: '香调偏好选择',
+        groupDescription: '请选择你喜欢的香调图片',
+        text: '请选择你喜欢的香调（图片多选）',
+        type: 'image-multiple',
+        options: fragranceResponse.fragrance_images.map((fragrance, index) => ({
+          label: String.fromCharCode(65 + index), // A, B, C...
+          value: fragrance.id,
+          text: fragrance.name,
+          image: fragrance.image_url
+        })),
+        minSelection: 1,
+        maxSelection: 3 // 最多选择3个香调
+      }
+      
+      // 标记前20题已提交
+      isFirst20Submitted.value = true
+      
+      // 更新可见题目列表，添加第21题
+      updateVisibleQuestions()
+      
+      // 移动到第21题
+      currentVisibleIndex.value = 20
+    } else if (currentVisibleIndex.value === totalVisibleQuestions.value - 1) {
       // 完成测验
       await completeQuizSession(sessionId.value)
       completed.value = true
       emit('complete', getReport())
     } else {
       currentVisibleIndex.value++
-      setTimeout(() => loadCurrentQuestionState(), 50)
     }
+    
+    // 加载当前题目的状态
+    setTimeout(() => loadCurrentQuestionState(), 50)
   } catch (err) {
     console.error('处理下一题失败:', err)
     error.value = `操作失败: ${err.message || '未知错误'}`

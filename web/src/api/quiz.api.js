@@ -143,6 +143,19 @@ export const deleteIncompleteSession = async (sessionId) => {
   }
 }
 
+// 提交前20题答案并获取香调偏好
+export const submitFirst20Questions = async (sessionId, answers) => {
+  try {
+    const response = await api.post(`/quiz/sessions/${sessionId}/submit-first-20/`, {
+      answers: answers
+    })
+    return response.data
+  } catch (error) {
+    console.error('提交前20题答案失败:', error)
+    throw error
+  }
+}
+
 // 使用AI扩写文本
 export const extendTextWithAI = async (text) => {
   try {
