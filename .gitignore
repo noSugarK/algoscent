@@ -64,4 +64,4 @@ ___pycache__/
 *.pyd
 
 *.pem
-.web/public/images/smell/*
+web/public/images/smell/
