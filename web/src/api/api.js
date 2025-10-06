@@ -2,7 +2,7 @@ import axios from 'axios'
 
 // 创建axios实例
 const api = axios.create({
-  baseURL: '/api/v1', // 基础URL，根据实际情况调整
+  baseURL: '/v1', // 基础URL，根据实际情况调整
   timeout: 10000, // 请求超时时间
 })
 

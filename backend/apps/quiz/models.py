@@ -100,6 +100,7 @@ class UserQuizSession(models.Model):
     start_time = models.DateTimeField(auto_now_add=True, verbose_name="开始时间")
     end_time = models.DateTimeField(null=True, blank=True, verbose_name="结束时间")
     duration_ms = models.IntegerField(null=True, blank=True, verbose_name="持续时间(毫秒)")
+    current_part = models.IntegerField(default=1, verbose_name="当前所处阶段（1-4）")
 
     class Meta:
         db_table = 'user_quiz_session'
@@ -126,6 +127,7 @@ class UserAnswer(models.Model):
     )
     value = models.TextField(null=True, blank=True, verbose_name="答案值")
     text = models.TextField(null=True, blank=True, verbose_name="文本答案")
+    part = models.IntegerField(default=1, verbose_name="所属阶段（1-4）")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="答题时间")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="更新时间")
 
@@ -136,3 +138,26 @@ class UserAnswer(models.Model):
 
     def __str__(self):
         return f"{self.session.session_id} - {self.question.id}"
+
+
+class FragranceCategory(models.Model):
+    """香调类别模型"""
+    id = models.CharField(max_length=50, primary_key=True, verbose_name="香调ID")
+    name = models.CharField(max_length=100, verbose_name="中文名称")
+    english_name = models.CharField(max_length=100, verbose_name="英文名称")
+    core_trait_1 = models.CharField(max_length=100, null=True, blank=True, verbose_name="核心特质1(类型/强度)")
+    core_trait_2 = models.CharField(max_length=100, null=True, blank=True, verbose_name="核心特质2(类型/强度)")
+    intensity = models.IntegerField(default=5, verbose_name="气味强度", help_text="1-10之间的数值")
+    style_keywords = models.TextField(null=True, blank=True, verbose_name="香气风格关键词")
+    image_url = models.CharField(max_length=255, verbose_name="图片地址")
+    category_type = models.CharField(max_length=50, verbose_name="香调类别")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="创建时间")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="更新时间")
+
+    class Meta:
+        db_table = 'fragrance_category'
+        verbose_name = '香调类别'
+        verbose_name_plural = '香调类别'
+
+    def __str__(self):
+        return f"{self.name} ({self.english_name})"

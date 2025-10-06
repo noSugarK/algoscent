@@ -7,6 +7,7 @@ from .views import (
     UserQuizSessionViewSet,
     UserAnswerViewSet,
     get_all_questions,
+    get_phased_questions,
     extend_text_with_ai
 )
 
@@ -17,23 +18,23 @@ router = DefaultRouter()
 router.register(
     r'question-groups', 
     QuizQuestionGroupViewSet, 
-    basename='quiz-question-group'
+    basename='question-group'
 )
 
 # 注册用户测验会话视图集
 router.register(
     r'sessions', 
     UserQuizSessionViewSet, 
-    basename='user-quiz-session'
+    basename='session'
 )
 
 # 为答题记录创建嵌套路由
 # 答题记录需要与会话关联，所以使用嵌套路由
-answer_router = DefaultRouter()
-answer_router.register(
+sessions_router = DefaultRouter()
+sessions_router.register(
     r'answers', 
     UserAnswerViewSet, 
-    basename='user-answer'
+    basename='session-answers'
 )
 
 # 定义URL模式
@@ -42,11 +43,14 @@ urlpatterns = [
     path('', include(router.urls)),
     
     # 嵌套路由：/sessions/{session_id}/answers/
-    path('sessions/<str:session_id>/', include(answer_router.urls)),
+    path('sessions/<str:session_id>/', include(sessions_router.urls)),
     
     # 获取所有题目（不分组）
-    path('all-questions/', get_all_questions, name='all-questions'),
+    path('all-questions/', get_all_questions, name='get_all_questions'),
+    
+    # 分阶段获取问卷题目
+    path('phased-questions/', get_phased_questions, name='phased-questions'),
     
     # AI扩写文本
-    path('extend-text-with-ai/', extend_text_with_ai, name='extend-text-with-ai'),
+    path('extend-text/', extend_text_with_ai, name='extend_text_with_ai'),
 ]

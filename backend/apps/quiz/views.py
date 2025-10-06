@@ -37,6 +37,90 @@ class QuizQuestionGroupViewSet(viewsets.ReadOnlyModelViewSet):
         
         serializer = self.get_serializer(groups, many=True)
         return Response(serializer.data)
+    
+    @action(detail=False, methods=['get'], url_path='part/(?P<part>[0-9]+)')
+    def get_part_questions(self, request, part=None):
+        """获取特定部分的题目"""
+        try:
+            part = int(part)
+            if part < 1 or part > 4:
+                return Response(
+                    {"code": 400, "msg": "部分参数无效，必须是1-4之间的整数"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            # 获取指定部分的题目组
+            group_id = f"part{part}"
+            try:
+                group = QuizQuestionGroup.objects.get(id=group_id)
+            except QuizQuestionGroup.DoesNotExist:
+                return Response(
+                    {"code": 404, "msg": f"第{part}部分题目组不存在"},
+                    status=status.HTTP_404_NOT_FOUND
+                )
+            
+            # 如果是Part4，需要根据用户会话动态生成选项
+            if part == 4:
+                # 获取用户会话ID
+                session_id = request.query_params.get('session_id')
+                if not session_id:
+                    return Response(
+                        {"code": 400, "msg": "Part4需要提供session_id参数"},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+                
+                try:
+                    session = UserQuizSession.objects.get(session_id=session_id)
+                except UserQuizSession.DoesNotExist:
+                    return Response(
+                        {"code": 404, "msg": "会话不存在"},
+                        status=status.HTTP_404_NOT_FOUND
+                    )
+                
+                # 生成动态Part4题目
+                questions = self._generate_part4_questions(session)
+                
+                # 序列化题目数据
+                serializer = QuizQuestionSerializer(questions, many=True)
+                
+                # 为动态生成的选项添加特殊处理
+                for i, question_data in enumerate(serializer.data):
+                    question = questions[i]
+                    if hasattr(question, '_dynamic_options'):
+                        # 序列化动态选项
+                        dynamic_options = []
+                        for option in question._dynamic_options:
+                            option_data = {
+                                'label': option.label,
+                                'value': option.value,
+                                'image': option.image
+                            }
+                            dynamic_options.append(option_data)
+                        question_data['options'] = dynamic_options
+                
+                return Response({
+                    "code": 200,
+                    "msg": "获取成功",
+                    "data": {
+                        'part': part,
+                        'title': group.title,
+                        'description': group.description,
+                        'questions': serializer.data
+                    }
+                })
+            else:
+                # 其他部分直接返回题目组数据
+                serializer = QuizQuestionGroupSerializer(group)
+                return Response({
+                    "code": 200,
+                    "msg": "获取成功",
+                    "data": serializer.data
+                })
+        except ValueError:
+            return Response(
+                {"code": 400, "msg": "部分参数必须是整数"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
 class UserQuizSessionViewSet(
     mixins.CreateModelMixin,
@@ -86,7 +170,9 @@ class UserQuizSessionViewSet(
         """创建新的测验会话"""
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        instance = serializer.save()
+        
+        # 确保在创建会话时正确初始化current_part字段
+        instance = serializer.save(current_part=1)
         
         # 获取创建后的会话数据
         session_serializer = UserQuizSessionSerializer(instance)
@@ -164,6 +250,274 @@ class UserQuizSessionViewSet(
         
         serializer = self.get_serializer(sessions, many=True)
         return Response(serializer.data)
+    
+    @action(detail=True, methods=['post'], url_path='submit-part/(?P<current_part>[0-9]+)')
+    def submit_part(self, request, session_id=None, current_part=None):
+        """提交当前阶段，进入下一阶段"""
+        try:
+            current_part = int(current_part)
+            if current_part < 1 or current_part > 4:
+                return Response(
+                    {"code": 400, "msg": "部分参数无效，必须是1-4之间的整数"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            instance = self.get_object()
+            if instance.status != 'in_progress':
+                return Response(
+                    {'detail': '该会话已结束，无法提交答案。'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            serializer = SubmitPartSerializer(data=request.data)
+            
+            if not serializer.is_valid():
+                return Response(
+                    {"code": 400, "msg": serializer.errors},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            submitted_session_id = serializer.validated_data["session_id"]
+            answers = serializer.validated_data["answers"]
+            
+            # 验证会话ID是否匹配
+            if str(instance.session_id) != str(submitted_session_id):
+                return Response(
+                    {"code": 400, "msg": "会话ID不匹配"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            # 更新会话的当前部分
+            instance.current_part = current_part + 1
+            instance.save()
+            
+            # 保存答案
+            for question_id, answer in answers.items():
+                try:
+                    question = QuizQuestion.objects.get(id=question_id)
+                    # 将答案转为JSON字符串存储
+                    if isinstance(answer, (list, dict)):
+                        answer = json.dumps(answer)
+                    
+                    UserAnswer.objects.update_or_create(
+                        session=instance,
+                        question=question,
+                        defaults={
+                            'value': answer,
+                            'part': current_part
+                        }
+                    )
+                except QuizQuestion.DoesNotExist:
+                    continue  # 跳过不存在的题目
+            
+            # 如果当前是Part3，生成Part4的题目
+            if current_part == 3:
+                part4_questions = self._generate_part4_questions(instance, answers)
+                return Response({
+                    "code": 200,
+                    "msg": "Part3提交成功，已生成Part4题目",
+                    "data": part4_questions
+                })
+            
+            # 如果是Part4，标记会话为已完成
+            if current_part == 4:
+                instance.status = 'completed'
+                instance.end_time = timezone.now()
+                if instance.start_time:
+                    duration = instance.end_time - instance.start_time
+                    instance.duration_ms = int(duration.total_seconds() * 1000)
+                instance.save()
+                return Response({"code": 200, "msg": "问卷提交成功"})
+            
+            # 返回下一部分的题目
+            next_part = current_part + 1
+            group_id = f"part{next_part}"
+            try:
+                group = QuizQuestionGroup.objects.get(id=group_id)
+                serializer = QuizQuestionGroupSerializer(group)
+                return Response({
+                    "code": 200,
+                    "msg": f"Part{current_part}提交成功",
+                    "data": serializer.data
+                })
+            except QuizQuestionGroup.DoesNotExist:
+                return Response(
+                    {"code": 404, "msg": f"第{next_part}部分题目组不存在"},
+                    status=status.HTTP_404_NOT_FOUND
+                )
+                
+        except ValueError:
+            return Response(
+                {"code": 400, "msg": "部分参数必须是整数"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+    
+    def _generate_part4_questions(self, session):
+        """
+        根据用户前三个部分的回答生成个性化的Part4题目
+        返回一个包含动态生成选项的题目列表
+        """
+        # 获取用户前三个部分的答案
+        user_answers = UserAnswer.objects.filter(
+            session=session,
+            part__in=[1, 2, 3]
+        )
+        
+        # 分析用户的香调偏好
+        fragrance_profile = self._analyze_fragrance_profile(user_answers)
+        
+        # 获取Part4题目组
+        try:
+            part4_group = QuizQuestionGroup.objects.get(id='part4')
+            questions = list(part4_group.questions.all())
+            
+            # 为每个题目动态生成选项
+            for question in questions:
+                if question.id == 'q4':  # 图片多选题
+                    # 根据用户偏好生成香调组合选项
+                    options = self._generate_fragrance_combinations(fragrance_profile)
+                    
+                    # 创建动态选项类
+                    class DynamicOption:
+                        def __init__(self, label, value, image):
+                            self.label = label
+                            self.value = value
+                            self.image = image
+                    
+                    # 为q4添加动态生成的选项
+                    question._dynamic_options = []
+                    for option in options:
+                        # 使用题目中配置的图片路径
+                        image_path = f"{question.images_path}{option['value']}.png"
+                        option_obj = DynamicOption(
+                            label=option['label'],
+                            value=option['value'],
+                            image=image_path
+                        )
+                        question._dynamic_options.append(option_obj)
+            
+            return questions
+        except QuizQuestionGroup.DoesNotExist:
+            return []
+    
+    def _analyze_fragrance_profile(self, user_answers):
+        """
+        分析用户的香调偏好
+        """
+        profile = {
+            'personality': {},  # 性格特点
+            'sensitivity': {},   # 感官敏感度
+            'relaxation': {},   # 放松场景
+            'preferences': {}   # 香调偏好
+        }
+        
+        for answer in user_answers:
+            question_id = answer.question.id
+            value = json.loads(answer.value) if answer.value else None
+            
+            if question_id.startswith('q1_'):  # Part1: 情景选择
+                if question_id == 'q1_1':  # 性格特点
+                    profile['personality'][value] = profile['personality'].get(value, 0) + 1
+                elif question_id == 'q1_2':  # 放松场景
+                    profile['relaxation'][value] = profile['relaxation'].get(value, 0) + 1
+                    
+            elif question_id.startswith('q2_'):  # Part2: 感官敏感度
+                profile['sensitivity'][question_id] = value
+                
+            elif question_id.startswith('q3_'):  # Part3: 填空题
+                # 分析填空题中的关键词
+                if answer.text:
+                    text = answer.text.lower()
+                    if '花' in text or 'floral' in text:
+                        profile['preferences']['floral'] = profile['preferences'].get('floral', 0) + 1
+                    if '木' in text or 'woody' in text:
+                        profile['preferences']['woody'] = profile['preferences'].get('woody', 0) + 1
+                    if '柑' in text or 'citrus' in text:
+                        profile['preferences']['citrus'] = profile['preferences'].get('citrus', 0) + 1
+                    if '东' in text or 'oriental' in text:
+                        profile['preferences']['oriental'] = profile['preferences'].get('oriental', 0) + 1
+        
+        return profile
+    
+    def _generate_fragrance_combinations(self, profile):
+        """
+        根据用户偏好生成香调组合选项
+        """
+        # 基础香调组合
+        base_combinations = [
+            {
+                'label': '花香木质调',
+                'value': 'floral_woody',
+                'description': '优雅中带有温暖'
+            },
+            {
+                'label': '柑橘海洋调',
+                'value': 'citrus_aquatic',
+                'description': '清新中带有自由'
+            },
+            {
+                'label': '东方香料调',
+                'value': 'oriental_spicy',
+                'description': '神秘中带有热情'
+            },
+            {
+                'label': '果香花调',
+                'value': 'fruity_floral',
+                'description': '活力中带有浪漫'
+            },
+            {
+                'label': '木质烟草调',
+                'value': 'woody_tobacco',
+                'description': '沉稳中带有成熟'
+            },
+            {
+                'label': '绿叶草本调',
+                'value': 'green_herbal',
+                'description': '自然中带有清新'
+            },
+            {
+                'label': '皮革麝香调',
+                'value': 'leather_musk',
+                'description': '野性中带有温柔'
+            },
+            {
+                'label': '香草美食调',
+                'value': 'vanilla_gourmand',
+                'description': '甜美中带有舒适'
+            }
+        ]
+        
+        # 根据用户偏好调整选项顺序
+        preferences = profile.get('preferences', {})
+        personality = profile.get('personality', {})
+        
+        # 根据性格特点调整权重
+        if 'outgoing' in personality and personality['outgoing'] > 0:
+            # 外向性格更喜欢明亮、活泼的香调
+            for combo in base_combinations:
+                if combo['value'] in ['citrus_aquatic', 'fruity_floral']:
+                    combo['score'] = combo.get('score', 0) + 2
+        
+        if 'calm' in personality and personality['calm'] > 0:
+            # 冷静性格更喜欢柔和、舒缓的香调
+            for combo in base_combinations:
+                if combo['value'] in ['floral_woody', 'green_herbal']:
+                    combo['score'] = combo.get('score', 0) + 2
+        
+        # 根据香调偏好调整权重
+        for pref, count in preferences.items():
+            for combo in base_combinations:
+                if pref in combo['value']:
+                    combo['score'] = combo.get('score', 0) + count
+        
+        # 按分数排序并返回前5个选项
+        sorted_combinations = sorted(
+            base_combinations, 
+            key=lambda x: x.get('score', 0), 
+            reverse=True
+        )
+        
+        return sorted_combinations[:5]  # 返回前5个最适合的选项
     
     @action(detail=True, methods=['get'], url_path='report')
     def report(self, request, session_id=None):
@@ -349,7 +703,86 @@ class UserAnswerViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
                 status=status.HTTP_404_NOT_FOUND
             )
 
-# 用于获取所有题目（不分组）的视图
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_phased_questions(request):
+    """
+    分阶段获取问卷题目
+    参数：
+    - part: 题目部分 (1-4)
+    - session_id: 会话ID (Part4必需)
+    """
+    part = request.query_params.get('part')
+    session_id = request.query_params.get('session_id')
+    
+    # 验证part参数
+    if not part or not part.isdigit() or int(part) < 1 or int(part) > 4:
+        return Response(
+            {"code": 400, "msg": "部分参数必须是1-4之间的整数"},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    
+    part = int(part)
+    
+    try:
+        # 获取指定部分的题目组
+        group = QuizQuestionGroup.objects.get(id=f'part{part}')
+        
+        # 如果是Part4，需要根据用户会话动态生成选项
+        if part == 4:
+            if not session_id:
+                return Response(
+                    {"code": 400, "msg": "Part4需要提供session_id参数"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            try:
+                session = UserQuizSession.objects.get(session_id=session_id)
+            except UserQuizSession.DoesNotExist:
+                return Response(
+                    {"code": 404, "msg": "会话不存在"},
+                    status=status.HTTP_404_NOT_FOUND
+                )
+            
+            # 获取UserQuizSessionViewSet实例来调用_generate_part4_questions方法
+            viewset = UserQuizSessionViewSet()
+            viewset.request = request
+            
+            # 生成动态Part4题目
+            questions = viewset._generate_part4_questions(session)
+            
+            # 序列化题目数据
+            serializer = QuizQuestionSerializer(questions, many=True)
+            
+            # 构建返回数据，与其他部分格式保持一致
+            return_data = {
+                'id': group.id,
+                'title': group.title,
+                'description': group.description,
+                'questions': serializer.data
+            }
+            
+            return Response({
+                "code": 200,
+                "msg": "获取成功",
+                "data": return_data
+            })
+        else:
+            # 其他部分直接返回题目组数据
+            serializer = QuizQuestionGroupSerializer(group)
+            return Response({
+                "code": 200,
+                "msg": "获取成功",
+                "data": serializer.data
+            })
+            
+    except QuizQuestionGroup.DoesNotExist:
+        return Response(
+            {"code": 404, "msg": f"第{part}部分题目组不存在"},
+            status=status.HTTP_404_NOT_FOUND
+        )
+
+@api_view(['GET'])
 def get_all_questions(request):
     """获取所有题目（不分组）"""
     questions = QuizQuestion.objects.prefetch_related('options').order_by('id')

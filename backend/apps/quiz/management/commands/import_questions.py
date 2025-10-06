@@ -261,6 +261,25 @@ class Command(BaseCommand):
                         "type": "text"
                     }
                 ]
+            },
+            
+            # ============ Part 4: 报告类题目（动态生成选项） ============
+            {
+                "id": "part4",
+                "title": "香调偏好报告",
+                "description": "根据您的回答生成的个性化香调推荐",
+                "questions": [
+                    {
+                        "id": "q4",
+                        "text": "根据您的回答，以下哪些香调组合最适合您？（可多选）",
+                        "type": "multiple",
+                        "image_range": True,  # 图片选项
+                        "images_path": "/images/smell/",  # 图片路径
+                        "min_selection": 1,
+                        "max_selection": 3,
+                        "options": []  # 选项将由后端动态生成
+                    }
+                ]
             }
         ]
 

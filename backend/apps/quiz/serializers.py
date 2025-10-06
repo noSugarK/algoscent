@@ -31,6 +31,26 @@ class QuizQuestionSerializer(serializers.ModelSerializer):
             'image_range', 'images_path', 'min_selection', 'max_selection',
             'show_text_when', 'options'
         ]
+    
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        
+        # 检查是否有动态生成的选项
+        if hasattr(instance, '_dynamic_options') and instance._dynamic_options:
+            # 将动态选项转换为序列化格式
+            dynamic_options = []
+            for option in instance._dynamic_options:
+                option_data = {
+                    'label': option.label,
+                    'value': option.value,
+                    'image': option.image
+                }
+                dynamic_options.append(option_data)
+            
+            # 替换原始选项
+            representation['options'] = dynamic_options
+        
+        return representation
 
 class QuizQuestionGroupSerializer(serializers.ModelSerializer):
     """题目组序列化器"""
@@ -75,7 +95,8 @@ class UserQuizSessionCreateSerializer(serializers.Serializer):
         session_id = f"AROMA_{get_random_string(32)}"
         return UserQuizSession.objects.create(
             user=user,
-            session_id=session_id
+            session_id=session_id,
+            current_part=1  # 初始化为第一部分
         )
 
 class UserAnswerCreateSerializer(serializers.Serializer):
@@ -83,6 +104,7 @@ class UserAnswerCreateSerializer(serializers.Serializer):
     question_id = serializers.CharField(required=True)
     value = serializers.JSONField(required=False, allow_null=True)
     text = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    part = serializers.IntegerField(required=False, default=1)
 
     def validate_question_id(self, value):
         try:
@@ -96,6 +118,7 @@ class UserAnswerCreateSerializer(serializers.Serializer):
         question_id = validated_data['question_id']
         value = validated_data.get('value')
         text = validated_data.get('text')
+        part = validated_data.get('part', 1)
         
         try:
             session = UserQuizSession.objects.get(session_id=session_id)
@@ -108,12 +131,26 @@ class UserAnswerCreateSerializer(serializers.Serializer):
             user_answer, created = UserAnswer.objects.update_or_create(
                 session=session,
                 question=question,
-                defaults={'value': value_str, 'text': text}
+                defaults={'value': value_str, 'text': text, 'part': part}
             )
             
             return user_answer
         except UserQuizSession.DoesNotExist:
             raise serializers.ValidationError("会话不存在")
+
+
+class SubmitPartSerializer(serializers.Serializer):
+    """提交阶段数据的校验序列化器"""
+    session_id = serializers.CharField()
+    current_part = serializers.IntegerField(min_value=1, max_value=4)
+    answers = serializers.DictField()  # 格式：{questionId: answer, ...}
+
+    def validate_answers(self, value):
+        """校验answers中的题目ID是否存在"""
+        question_ids = value.keys()
+        if not QuizQuestion.objects.filter(id__in=question_ids).exists():
+            raise serializers.ValidationError("存在无效的题目ID")
+        return value
 
 class UserQuizSessionCompleteSerializer(serializers.Serializer):
     """完成用户测验会话序列化器"""

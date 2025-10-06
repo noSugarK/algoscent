@@ -7,7 +7,14 @@
         <h1 class="text-3xl md:text-4xl font-bold text-gray-800 mb-2">
           疗愈香氛偏好测试
         </h1>
-        <p class="text-gray-600">第 {{ visibleQuestionIndex + 1 }} 题 / 共 {{ totalVisibleQuestions }} 题</p>
+        <div class="flex items-center justify-between mb-6">
+            <div class="text-lg font-medium text-gray-700">
+              第 {{ currentPart }} 部分 / 共 4 部分
+            </div>
+            <div class="text-sm text-gray-500">
+              第 {{ (visibleQuestionIndex || 0) + 1 }} 题 / 共 {{ totalVisibleQuestions }} 题
+            </div>
+          </div>
       </div>
 
       <!-- Result View -->
@@ -55,7 +62,7 @@
         <!-- Navigation -->
         <div class="flex flex-col sm:flex-row justify-between gap-4 mt-10 pt-6 border-t border-gray-100">
           <button
-              v-if="visibleQuestionIndex > 0"
+              v-if="(visibleQuestionIndex || 0) > 0"
               @click="prevQuestion"
               class="px-6 py-3 bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium rounded-xl transition-colors transform hover:-translate-y-1"
           >
@@ -72,7 +79,7 @@
                 : 'bg-gray-200 text-gray-400 cursor-not-allowed'
             ]"
           >
-            {{ loading ? '处理中...' : (visibleQuestionIndex === visibleQuestions.length - 1 ? '完成测试' : '下一题 →') }}
+            {{ loading ? '处理中...' : (visibleQuestionIndex === ((visibleQuestions && visibleQuestions.length) ? visibleQuestions.length - 1 : 0) ? (currentPart.value === 4 ? '完成测试' : '下一部分 →') : '下一题 →') }}
           </button>
         </div>
       </div>
@@ -107,7 +114,7 @@
 <script setup>
 import {ref, computed, onMounted, watch, markRaw} from 'vue'
 import {useRoute} from 'vue-router'
-import {getQuestionGroups, createQuizSession, saveUserAnswer, completeQuizSession, resumeIncompleteSession, submitFirst20Questions} from '@/api/quiz.api.js'
+import {getQuestionGroups, createQuizSession, saveUserAnswer, completeQuizSession, resumeIncompleteSession, submitFirst20Questions, getPhasedQuestions, checkIncompleteSession} from '@/api/quiz.api.js'
 import ResultDisplay from '@/components/quiz/ResultDisplay.vue'
 
 // 题型组件
@@ -141,29 +148,27 @@ const props = defineProps({
 // ===== 定义事件 =====
 const emit = defineEmits(['complete', 'restart'])
 
-// ===== 状态 =====
-const answers = ref({})
-const completed = ref(false)
-const startTime = ref(Date.now())
+// ===== 响应式状态 =====
 const sessionId = ref('')
+const startTime = ref(Date.now())
+const answers = ref({})
+const currentVisibleIndex = ref(0)
+const tempAnswer = ref('')
+const tempMultiAnswer = ref([])
+const tempTextAnswer = ref('')
 const loading = ref(false)
 const error = ref('')
-const loadedSessionData = ref(null)
+const completed = ref(false)
 const isFirst20Submitted = ref(false)
+const loadedSessionData = ref(null)
+const allQuestionsWithGroup = ref([])
+const visibleQuestions = ref([])
+const currentPart = ref(1) // 当前部分，初始为1
+const completedParts = ref([]) // 已完成的部分列表
 const fragranceImageQuestion = ref(null)
 
 // 路由
 const route = useRoute()
-
-// 临时答案
-const tempAnswer = ref('')
-const tempMultiAnswer = ref([])
-const tempTextAnswer = ref('')
-
-// 构建题目序列
-const allQuestionsWithGroup = ref([])
-const visibleQuestions = ref([])
-const currentVisibleIndex = ref(0)
 
 onMounted(() => {
   initQuestions()
@@ -174,95 +179,46 @@ const initQuestions = async () => {
   error.value = ''
   
   try {
-    // 检查路由参数中是否有sessionId
-    const sessionIdFromRoute = route.query.sessionId
-    // console.log('🔍 检查路由参数sessionId:', sessionIdFromRoute)
-    
-    // 如果有sessionId参数，尝试恢复会话
-    if (sessionIdFromRoute) {
+    // 首先检查是否有未完成的会话
+    if (!props.initialSession && !loadedSessionData.value) {
       try {
-        // console.log('🔄 尝试恢复会话:', sessionIdFromRoute)
-        const result = await resumeIncompleteSession(sessionIdFromRoute)
-        // console.log('✅ 恢复会话数据:', result)
-        loadedSessionData.value = result
-      } catch (sessionError) {
-        // console.error('恢复会话失败:', sessionError)
-        error.value = '恢复会话失败，开始新会话'
-        // 继续执行，会自动创建新会话
+        const incompleteSession = await checkIncompleteSession()
+        if (incompleteSession.data && incompleteSession.data.session_id) {
+          // 如果有未完成的会话，恢复它
+          const sessionData = await resumeIncompleteSession(incompleteSession.data.session_id)
+          loadedSessionData.value = sessionData.session
+          sessionId.value = sessionData.session.session_id
+          startTime.value = sessionData.session.start_time ? new Date(sessionData.session.start_time).getTime() : Date.now()
+          
+          // 加载答案数据
+          if (sessionData.answers && typeof sessionData.answers === 'object') {
+            console.log('📥 从未完成会话加载答案数据:', sessionData.answers)
+            answers.value = {...sessionData.answers}
+          }
+          
+          // 验证答案数据是否正确加载
+          if (Object.keys(answers.value).length > 0) {
+            console.log('✅ 恢复会话成功，已加载答案数:', Object.keys(answers.value).length)
+            console.log('✅ 当前会话ID:', sessionId.value)
+          } else {
+            console.log('⚠️ 未加载到任何答案数据')
+          }
+        }
+      } catch (err) {
+        console.warn('检查未完成会话失败:', err)
       }
-    } else {
-      console.log('🚫 没有从路由参数获取到sessionId')
     }
     
-    // 获取题目组数据
-    const groupsData = await getQuestionGroups()
-    
-    // 构建题目序列
-    allQuestionsWithGroup.value = []
-    
-    // 处理可能的分页响应格式
-    const groupsArray = Array.isArray(groupsData) ? groupsData : (groupsData.results || [])
-    
-    if (groupsArray.length === 0) {
-      console.warn('没有获取到题目数据')
-      // 可以添加一些默认的模拟数据，防止页面空白
-      allQuestionsWithGroup.value = [
-        {
-          id: 'demo-1',
-          groupId: 'demo-group',
-          groupTitle: '示例题目组',
-          groupDescription: '这是一个示例题目组',
-          text: '你喜欢哪种类型的香氛？',
-          type: 'single',
-          options: [
-            { label: 'A', value: 'floral', text: '花香调' },
-            { label: 'B', value: 'woody', text: '木质调' },
-            { label: 'C', value: 'citrus', text: '柑橘调' },
-            { label: 'D', value: 'spicy', text: '辛辣调' }
-          ]
-        }
-      ]
-    } else {
-      groupsArray.forEach(group => {
-        // 确保questions存在且为数组
-        if (group.questions && Array.isArray(group.questions)) {
-          group.questions.forEach(q => {
-            // 优先使用数据库中的max_selection字段，兼容maxSelection
-            // console.log(q)
-            const calculatedMaxSelection = q.max_selection || q.maxSelection;
-            // console.log(`🔧 初始化题目ID: ${q.id}, 类型: ${q.type}, max_selection: ${q.max_selection}, maxSelection: ${q.maxSelection}, calculatedMaxSelection: ${calculatedMaxSelection}`);
-            
-            allQuestionsWithGroup.value.push({
-              id: q.id,
-              groupId: group.id,
-              groupTitle: group.title,
-              groupDescription: group.description,
-              imageRange: group.imageRange || 1,
-              imagesPath: group.imagesPath || '',
-              text: q.text,
-              type: q.type,
-              options: q.options || [],
-              minSelection: q.minSelection || 1,
-              maxSelection: calculatedMaxSelection,
-              showTextWhen: q.showTextWhen,
-              condition: q.condition
-            })
-          })
-        }
-      })
-    }
-    
-    // 检查是否有初始会话数据（继续之前的会话）
-    // console.log('🔍 检查初始会话数据 - props.initialSession:', props.initialSession)
-    // console.log('🔍 检查初始会话数据 - loadedSessionData.value:', loadedSessionData.value)
-    
+    // 检查是否有初始会话数据或从本地存储加载的会话数据
     if ((props.initialSession && props.initialSession.session_id) || loadedSessionData.value) {
       // console.log('✅ 检测到会话数据，准备恢复')
       // 使用之前的会话ID
       const sessionData = props.initialSession || loadedSessionData.value
       
       // 确保answers.value初始化为空对象
-      answers.value = {};
+      if (!answers.value || Object.keys(answers.value).length === 0) {
+        answers.value = {};
+      }
       
       // 检查数据格式，确保正确提取数据
       if (sessionData.session) {
@@ -272,9 +228,26 @@ const initQuestions = async () => {
         startTime.value = sessionData.session.start_time ? new Date(sessionData.session.start_time).getTime() : Date.now()
         
         // 正确处理answerMap格式的答案数据
-        if (sessionData.answers && typeof sessionData.answers === 'object') {
+        if (sessionData.answers && typeof sessionData.answers === 'object' && Object.keys(sessionData.answers).length > 0) {
           // console.log('📥 加载答案数据:', sessionData.answers)
-          answers.value = {...sessionData.answers}
+          // 检查是否是数组格式，如果是则转换为对象格式
+          if (Array.isArray(sessionData.answers)) {
+            console.log('⚠️ 检测到sessionData.answers是数组格式，正在转换为对象格式')
+            const answersObj = {}
+            sessionData.answers.forEach((answer, index) => {
+              // 如果数组元素有question_id属性，使用它作为键
+              if (answer.question_id) {
+                answersObj[answer.question_id] = answer.value || answer
+              } else {
+                // 否则使用索引作为键，假设是q1-1, q1-2等格式
+                answersObj[`q1-${index + 1}`] = answer
+              }
+            })
+            answers.value = answersObj
+            console.log('✅ 转换后的answers.value:', answers.value)
+          } else {
+            answers.value = {...sessionData.answers}
+          }
         } else if (sessionData.session.answers && Array.isArray(sessionData.session.answers)) {
           // 处理直接包含在session对象中的答案数组
           // console.log('📥 加载嵌套在session中的答案数组:', sessionData.session.answers)
@@ -294,7 +267,24 @@ const initQuestions = async () => {
         
         if (sessionData.answers && typeof sessionData.answers === 'object') {
           console.log('📥 加载答案数据:', sessionData.answers)
-          answers.value = {...sessionData.answers}
+          // 检查是否是数组格式，如果是则转换为对象格式
+          if (Array.isArray(sessionData.answers)) {
+            console.log('⚠️ 检测到sessionData.answers是数组格式，正在转换为对象格式')
+            const answersObj = {}
+            sessionData.answers.forEach((answer, index) => {
+              // 如果数组元素有question_id属性，使用它作为键
+              if (answer.question_id) {
+                answersObj[answer.question_id] = answer.value || answer
+              } else {
+                // 否则使用索引作为键，假设是q1-1, q1-2等格式
+                answersObj[`q1-${index + 1}`] = answer
+              }
+            })
+            answers.value = answersObj
+            console.log('✅ 转换后的answers.value:', answers.value)
+          } else {
+            answers.value = {...sessionData.answers}
+          }
         }
         
         loadedSessionData.value = sessionData
@@ -308,6 +298,53 @@ const initQuestions = async () => {
       } else {
         console.log('⚠️ 未加载到任何答案数据')
       }
+      
+      // 根据已回答的题目数量确定应该加载哪个部分
+      let partToLoad = 1
+      const answeredCount = Object.keys(answers.value).length
+      if (answeredCount >= 20) {
+        partToLoad = 4 // 直接加载第4部分（香调图片题目）
+        completedParts.value = [1, 2, 3] // 假设前3部分已完成
+      }
+      
+      // 设置当前部分
+      currentPart.value = partToLoad
+      
+      // 分阶段获取题目数据
+      const response = await getPhasedQuestions(partToLoad, sessionId.value)
+      const groupData = response.data
+      
+      // 构建题目序列
+      allQuestionsWithGroup.value = []
+      
+      // 处理题目数据
+      if (groupData.questions && Array.isArray(groupData.questions)) {
+        groupData.questions.forEach(q => {
+          // 优先使用数据库中的max_selection字段，兼容maxSelection
+          const calculatedMaxSelection = q.max_selection || q.maxSelection;
+          
+          allQuestionsWithGroup.value.push({
+            id: q.id,
+            groupId: groupData.id,
+            groupTitle: groupData.title,
+            groupDescription: groupData.description,
+            imageRange: q.image_range || 1,
+            imagesPath: q.images_path || '',
+            text: q.text,
+            type: q.type,
+            options: q.options || [],
+            minSelection: q.min_selection || 1,
+            maxSelection: calculatedMaxSelection,
+            showTextWhen: q.showText_when,
+            condition: q.condition
+          })
+        })
+      }
+      
+      // 如果是第4部分（香调图片题目），标记前20题已提交
+      if (partToLoad === 4) {
+        isFirst20Submitted.value = true
+      }
     } else {
       // 创建新的测验会话
       try {
@@ -318,24 +355,184 @@ const initQuestions = async () => {
         // 生成临时会话ID，确保功能可以继续使用
         sessionId.value = 'TEMP_' + Date.now()
       }
+      
+      // 获取第一部分题目
+      const response = await getPhasedQuestions(1)
+      const groupData = response.data
+      
+      // 构建题目序列
+      allQuestionsWithGroup.value = []
+      
+      // 处理题目数据
+      if (groupData.questions && Array.isArray(groupData.questions)) {
+        groupData.questions.forEach(q => {
+          // 优先使用数据库中的max_selection字段，兼容maxSelection
+          const calculatedMaxSelection = q.max_selection || q.maxSelection;
+          
+          allQuestionsWithGroup.value.push({
+            id: q.id,
+            groupId: groupData.id,
+            groupTitle: groupData.title,
+            groupDescription: groupData.description,
+            imageRange: q.image_range || 1,
+            imagesPath: q.images_path || '',
+            text: q.text,
+            type: q.type,
+            options: q.options || [],
+            minSelection: q.min_selection || 1,
+            maxSelection: calculatedMaxSelection,
+            showTextWhen: q.showText_when,
+            condition: q.condition
+          })
+        })
+      }
     }
     
     // 初始化可见题目
     updateVisibleQuestions()
     
-    // 如果有会话数据，尝试找到最后回答的题目位置
+    // 如果会话数据，尝试找到最后回答的题目位置
     if (Object.keys(answers.value).length > 0) {
       // 找到最后回答的题目
-      const answeredQuestions = Object.keys(answers.value)
-      // console.log(answeredQuestions)
-      // 找到该题目在visibleQuestions中的索引
-      const lastAnsweredIndex = visibleQuestions.value.findIndex(q => answeredQuestions.includes(q.id))
-      if (lastAnsweredIndex !== -1 && lastAnsweredIndex < visibleQuestions.value.length - 1) {
-        // 如果找到且不是最后一题，设置为下一题
-        currentVisibleIndex.value = answeredQuestions.length - 1
-        console.log('✅ 定位到未完成题目位置:', currentVisibleIndex.value + 1)
+      // 注意：answers.value的结构应该是 {q1-1: {value: 'D'}, q1-2: {value: 'E'}, ...}
+      // 所以Object.keys(answers.value)返回的是实际的题目ID，如['q1-1', 'q1-2', ...]
+      let answeredQuestions
+      
+      // 检查answers.value是否是数组格式，如果是，需要转换为对象格式
+      if (Array.isArray(answers.value)) {
+        console.log('⚠️ 检测到answers.value是数组格式，正在转换为对象格式')
+        const answersObj = {}
+        answers.value.forEach((answer, index) => {
+          // 如果数组元素有question_id属性，使用它作为键
+          if (answer.question_id) {
+            answersObj[answer.question_id] = answer.value || answer
+          } else {
+            // 否则使用索引作为键，假设是q1-1, q1-2等格式
+            answersObj[`q1-${index + 1}`] = answer
+          }
+        })
+        answers.value = answersObj
+        console.log('✅ 转换后的answers.value:', answers.value)
+      }
+      
+      answeredQuestions = Object.keys(answers.value)
+      console.log('已回答的题目ID:', answeredQuestions)
+      
+      // 获取最后一个回答的题目ID
+      const lastAnsweredQuestionId = answeredQuestions[answeredQuestions.length - 1]
+      console.log('最后回答的题目ID:', lastAnsweredQuestionId)
+      
+      // 根据题目ID判断它属于哪个部分
+      // 题目ID格式为"q1-1"、"q2-1"、"q3-1"、"q4-1"等，或者是"q3"、"q4"等格式
+      let targetPart = 1
+      
+      if (lastAnsweredQuestionId.startsWith('q4-') || lastAnsweredQuestionId === 'q4') {
+        targetPart = 4 // 第4部分：香调图片题目
+      } else if (lastAnsweredQuestionId.startsWith('q3-') || lastAnsweredQuestionId === 'q3') {
+        targetPart = 3 // 第3部分：情境题目
+      } else if (lastAnsweredQuestionId.startsWith('q2-') || lastAnsweredQuestionId === 'q2') {
+        targetPart = 2 // 第2部分：多选题目
+      } else if (lastAnsweredQuestionId.startsWith('q1-') || lastAnsweredQuestionId === 'q1') {
+        targetPart = 1 // 第1部分：单选题目
+      }
+      
+      console.log('根据题目ID判断目标部分:', targetPart)
+      
+      // 如果当前部分不是目标部分，需要切换到目标部分
+      if (currentPart.value !== targetPart) {
+        console.log(`从第${currentPart.value}部分切换到第${targetPart}部分`)
+        
+        // 更新当前部分和已完成部分
+        currentPart.value = targetPart
+        
+        // 根据目标部分设置已完成部分
+        if (targetPart === 4) {
+          completedParts.value = [1, 2, 3]
+          isFirst20Submitted.value = true
+        } else if (targetPart === 3) {
+          completedParts.value = [1, 2]
+        } else if (targetPart === 2) {
+          completedParts.value = [1]
+        }
+        
+        // 重新加载目标部分的题目
+        const response = await getPhasedQuestions(targetPart, sessionId.value)
+        const groupData = response.data
+        
+        // 构建题目序列
+        allQuestionsWithGroup.value = []
+        if (groupData.questions && Array.isArray(groupData.questions)) {
+          groupData.questions.forEach(q => {
+            const calculatedMaxSelection = q.max_selection || q.maxSelection;
+            allQuestionsWithGroup.value.push({
+              id: q.id,
+              groupId: groupData.id,
+              groupTitle: groupData.title,
+              groupDescription: groupData.description,
+              imageRange: q.image_range || 1,
+              imagesPath: q.images_path || '',
+              text: q.text,
+              type: q.type,
+              options: q.options || [],
+              minSelection: q.min_selection || 1,
+              maxSelection: calculatedMaxSelection,
+              showTextWhen: q.showText_when,
+              condition: q.condition
+            })
+          })
+        }
+        
+        // 更新可见题目列表
+        updateVisibleQuestions()
+      }
+      
+      // 找到最后回答的题目在当前部分可见题目中的索引
+      let lastAnsweredIndex = visibleQuestions.value.findIndex(q => q.id === lastAnsweredQuestionId)
+      console.log('最后回答的题目在可见题目中的索引:', lastAnsweredIndex)
+      
+      // 如果找不到匹配的题目ID，检查是否是特殊格式（如"q3"、"q4"）
+      if (lastAnsweredIndex === -1 && (lastAnsweredQuestionId === 'q3' || lastAnsweredQuestionId === 'q4')) {
+        console.log(`⚠️ 未找到题目ID ${lastAnsweredQuestionId}，可能是特殊格式，尝试查找匹配的题目`)
+        
+        // 对于"q3"，查找第3部分的第一个题目
+        if (lastAnsweredQuestionId === 'q3' && targetPart === 3) {
+          // 查找第3部分的第一个题目
+          const part3Question = visibleQuestions.value.find(q => q.id.startsWith('q3-'))
+          if (part3Question) {
+            lastAnsweredIndex = visibleQuestions.value.findIndex(q => q.id === part3Question.id)
+            console.log(`✅ 找到第3部分的第一个题目: ${part3Question.id}，索引: ${lastAnsweredIndex}`)
+          }
+        }
+        
+        // 对于"q4"，查找第4部分的第一个题目
+        if (lastAnsweredQuestionId === 'q4' && targetPart === 4) {
+          // 查找第4部分的第一个题目
+          const part4Question = visibleQuestions.value.find(q => q.id.startsWith('q4-'))
+          if (part4Question) {
+            lastAnsweredIndex = visibleQuestions.value.findIndex(q => q.id === part4Question.id)
+            console.log(`✅ 找到第4部分的第一个题目: ${part4Question.id}，索引: ${lastAnsweredIndex}`)
+          }
+        }
+      }
+      
+      if (lastAnsweredIndex !== -1) {
+        // 如果找到已回答的题目，检查是否是当前部分的最后一题
+        if (lastAnsweredIndex === visibleQuestions.value.length - 1) {
+          // 如果是最后一题，保持在这个位置
+          currentVisibleIndex.value = lastAnsweredIndex
+          console.log('✅ 定位到当前部分最后一题:', currentVisibleIndex.value + 1)
+        } else {
+          // 如果不是最后一题，跳转到下一题
+          currentVisibleIndex.value = lastAnsweredIndex + 1
+          console.log('✅ 定位到未完成题目位置:', currentVisibleIndex.value + 1)
+        }
         // 确保加载对应的题目状态
         setTimeout(() => loadCurrentQuestionState(), 100)
+      } else {
+        // 如果在当前部分没有找到最后回答的题目，可能是因为题目ID格式不匹配
+        // 这种情况下，我们跳转到当前部分的第一题
+        currentVisibleIndex.value = 0
+        console.log('⚠️ 未在当前部分找到最后回答的题目，跳转到第一题')
       }
     }
     
@@ -370,28 +567,33 @@ const initQuestions = async () => {
 
 const updateVisibleQuestions = () => {
   const result = []
-  for (const q of allQuestionsWithGroup.value) {
-    if (!q.condition || q.condition(answers.value)) {
-      result.push(q)
+  if (allQuestionsWithGroup.value) {
+    for (const q of allQuestionsWithGroup.value) {
+      if (!q.condition || q.condition(answers.value)) {
+        result.push(q)
+      }
     }
   }
   
-  // 如果已经提交了前20题并且香调图片题目存在，则添加到题目列表末尾
-  if (isFirst20Submitted.value && fragranceImageQuestion.value && result.length === 20) {
-    result.push(fragranceImageQuestion.value)
-  }
-  
   visibleQuestions.value = result
-  if (currentVisibleIndex.value >= visibleQuestions.value.length && visibleQuestions.value.length > 0) {
+  if (visibleQuestions.value && currentVisibleIndex.value >= visibleQuestions.value.length && visibleQuestions.value.length > 0) {
     currentVisibleIndex.value = visibleQuestions.value.length - 1
   }
-  loadCurrentQuestionState()
+  // 只有在有可见题目时才加载当前题目状态
+  if (visibleQuestions.value && visibleQuestions.value.length > 0) {
+    loadCurrentQuestionState()
+  }
 }
 
 watch(answers, () => updateVisibleQuestions(), {deep: true})
 
 // ===== 计算属性 =====
-const currentQuestion = computed(() => visibleQuestions.value[currentVisibleIndex.value])
+const currentQuestion = computed(() => {
+  if (!visibleQuestions.value || !visibleQuestions.value.length || currentVisibleIndex.value === undefined || currentVisibleIndex.value < 0 || currentVisibleIndex.value >= visibleQuestions.value.length) {
+    return null
+  }
+  return visibleQuestions.value[currentVisibleIndex.value]
+})
 const currentGroup = computed(() => currentQuestion.value ? {
   title: currentQuestion.value.groupTitle,
   description: currentQuestion.value.groupDescription,
@@ -400,7 +602,7 @@ const currentGroup = computed(() => currentQuestion.value ? {
 } : {})
 
 const visibleQuestionIndex = computed(() => currentVisibleIndex.value)
-const totalVisibleQuestions = computed(() => visibleQuestions.value.length)
+const totalVisibleQuestions = computed(() => visibleQuestions.value ? visibleQuestions.value.length : 0)
 
 const isAnswered = computed(() => {
   const q = currentQuestion.value
@@ -409,16 +611,16 @@ const isAnswered = computed(() => {
   if (q.type === 'single' || q.type === 'image-single') {
     return !!tempAnswer.value
   } else if (q.type === 'multiple' || q.type === 'image-multiple') {
-    return tempMultiAnswer.value.length >= (q.minSelection || 1) &&
+    return tempMultiAnswer.value && tempMultiAnswer.value.length >= (q.minSelection || 1) &&
         tempMultiAnswer.value.length <= (q.maxSelection || Infinity)
   } else if (q.type === 'single-with-text') {
     if (!tempAnswer.value) return false
     if (tempAnswer.value === q.showTextWhen) {
-      return !!tempTextAnswer.value.trim()
+      return !!tempTextAnswer.value && tempTextAnswer.value.trim()
     }
     return true
   } else if (q.type === 'text') {
-    return !!tempTextAnswer.value.trim()
+    return !!tempTextAnswer.value && tempTextAnswer.value.trim()
   }
   return false
 })
@@ -437,7 +639,10 @@ const getComponentForQuestion = (q) => componentMap[q.type] || 'div'
 // ===== 方法 =====
 const loadCurrentQuestionState = () => {
   const q = currentQuestion.value
-  if (!q) return
+  if (!q) {
+    console.log('当前题目为空，跳过加载题目状态')
+    return
+  }
 
   // showTextWhen属性的处理现在在SingleWithText.vue组件内部进行，避免直接修改props
 
@@ -449,16 +654,44 @@ const loadCurrentQuestionState = () => {
   }
 
   const saved = answers.value[q.id]
+  console.log(`📋 加载题目 ${q.id} 的状态，保存的答案数据:`, saved)
+  
+  // 处理可能的JSON字符串格式
+  let parsedSaved = saved
+  if (typeof saved === 'string') {
+    try {
+      parsedSaved = JSON.parse(saved)
+      console.log(`🔄 解析JSON字符串格式的答案:`, parsedSaved)
+    } catch (e) {
+      // 检查是否是纯文本格式的答案（不包含JSON结构）
+      const isPlainText = !saved.trim().startsWith('{') && !saved.trim().startsWith('[')
+      
+      if (isPlainText) {
+        // 对于纯文本格式的答案，不显示错误信息
+        console.log(`ℹ️ 题目 ${q.id} 的答案数据为纯文本格式`)
+      } else {
+        // 对于可能是JSON但格式错误的答案，只在开发环境下显示详细错误信息
+        if (process.env.NODE_ENV === 'development') {
+          console.warn(`⚠️ 无法解析题目 ${q.id} 的答案JSON字符串:`, e)
+        } else {
+          console.log(`ℹ️ 题目 ${q.id} 的答案数据格式可能有误`)
+        }
+      }
+      parsedSaved = saved
+    }
+  }
+  
   if (q.type === 'single' || q.type === 'image-single') {
-    tempAnswer.value = saved?.value || ''
+    tempAnswer.value = parsedSaved?.value || ''
+    console.log(`✅ 单选题 ${q.id} 设置答案为:`, tempAnswer.value)
   } else if (q.type === 'multiple' || q.type === 'image-multiple') {
     // 处理字符串格式的数组或普通数组
-    if (Array.isArray(saved)) {
-      tempMultiAnswer.value = [...saved]
-    } else if (typeof saved === 'string') {
+    if (Array.isArray(parsedSaved)) {
+      tempMultiAnswer.value = [...parsedSaved]
+    } else if (typeof parsedSaved === 'string') {
       try {
         // 尝试解析字符串格式的数组
-        const parsed = JSON.parse(saved)
+        const parsed = JSON.parse(parsedSaved)
         tempMultiAnswer.value = Array.isArray(parsed) ? [...parsed] : []
       } catch {
         tempMultiAnswer.value = []
@@ -466,20 +699,22 @@ const loadCurrentQuestionState = () => {
     } else {
       tempMultiAnswer.value = []
     }
+    console.log(`✅ 多选题 ${q.id} 设置答案为:`, tempMultiAnswer.value)
   } else if (q.type === 'single-with-text') {
-    if (saved && typeof saved === 'object') {
-      tempAnswer.value = saved.value || ''
-      tempTextAnswer.value = saved.text || ''
+    if (parsedSaved && typeof parsedSaved === 'object') {
+      tempAnswer.value = parsedSaved.value || ''
+      tempTextAnswer.value = parsedSaved.text || ''
     } else {
       tempAnswer.value = ''
       tempTextAnswer.value = ''
     }
+    console.log(`✅ 带文本单选题 ${q.id} 设置答案为:`, { value: tempAnswer.value, text: tempTextAnswer.value })
   } else if (q.type === 'text') {
     // 对于纯文本类型题目，处理可能的JSON嵌套字符串
-    if (typeof saved === 'string') {
+    if (typeof parsedSaved === 'string') {
       try {
         // 尝试解析可能嵌套的JSON字符串
-        const parsed = JSON.parse(saved);
+        const parsed = JSON.parse(parsedSaved);
         // 如果解析结果是对象，尝试获取其value或text属性
         if (typeof parsed === 'object') {
           tempTextAnswer.value = parsed.value || parsed.text || '';
@@ -489,14 +724,15 @@ const loadCurrentQuestionState = () => {
         }
       } catch (e) {
         // 如果解析失败，使用原始字符串
-        tempTextAnswer.value = saved;
+        tempTextAnswer.value = parsedSaved;
       }
-    } else if (saved && typeof saved === 'object') {
-      // 如果saved是对象，尝试获取其value或text属性
-      tempTextAnswer.value = saved.value || saved.text || '';
+    } else if (parsedSaved && typeof parsedSaved === 'object') {
+      // 如果parsedSaved是对象，尝试获取其value或text属性
+      tempTextAnswer.value = parsedSaved.value || parsedSaved.text || '';
     } else {
-      tempTextAnswer.value = saved || '';
+      tempTextAnswer.value = parsedSaved || '';
     }
+    console.log(`✅ 文本题 ${q.id} 设置答案为:`, tempTextAnswer.value)
   }
 }
 
@@ -549,57 +785,104 @@ const nextQuestion = async () => {
   try {
     await saveAnswer()
 
-    // 检查是否是在第20题之后点击下一题且尚未提交前20题答案
-    if (currentVisibleIndex.value === 19 && !isFirst20Submitted.value) {
-      // 提交前20题答案
-      const first20Answers = {}
-      for (let i = 0; i < 20; i++) {
-        const questionId = visibleQuestions.value[i].id
-        if (answers.value[questionId] !== undefined) {
-          first20Answers[questionId] = answers.value[questionId]
+    // 检查是否是当前部分的最后一题
+    if (visibleQuestions.value && currentVisibleIndex.value === visibleQuestions.value.length - 1) {
+      // 标记当前部分已完成
+      if (!completedParts.value.includes(currentPart.value)) {
+        completedParts.value.push(currentPart.value)
+      }
+      
+      // 检查是否已完成所有部分
+      if (completedParts.value.length >= 4) {
+        // 完成测验
+        await completeQuizSession(sessionId.value)
+        completed.value = true
+        emit('complete', getReport())
+      } else {
+        // 加载下一部分
+        let nextPart = currentPart.value + 1
+        
+        // 特殊处理第4部分（香调图片题目）
+        if (nextPart === 4 && !isFirst20Submitted.value) {
+          // 如果是第4部分且尚未提交前20题答案，需要先提交
+          const first20Answers = {}
+          if (visibleQuestions.value) {
+            for (let i = 0; i < 20; i++) {
+              if (i < visibleQuestions.value.length) {
+                const questionId = visibleQuestions.value[i].id
+                if (answers.value[questionId] !== undefined) {
+                  first20Answers[questionId] = answers.value[questionId]
+                }
+              }
+            }
+          }
+          
+          // 调用API提交前20题答案
+          await submitFirst20Questions(sessionId.value, first20Answers)
+          isFirst20Submitted.value = true
+        }
+        
+        // 跳过已加载的部分
+        while (nextPart <= 4 && completedParts.value.includes(nextPart)) {
+          nextPart++
+        }
+        
+        if (nextPart <= 4) {
+          // 加载下一部分题目
+          currentPart.value = nextPart
+          const response = await getPhasedQuestions(nextPart, sessionId.value)
+          const groupData = response.data
+          
+          // 构建题目序列
+          allQuestionsWithGroup.value = []
+          
+          // 处理题目数据
+          if (groupData.questions && Array.isArray(groupData.questions)) {
+            groupData.questions.forEach(q => {
+              // 优先使用数据库中的max_selection字段，兼容maxSelection
+              const calculatedMaxSelection = q.max_selection || q.maxSelection;
+              
+              allQuestionsWithGroup.value.push({
+                id: q.id,
+                groupId: groupData.id,
+                groupTitle: groupData.title,
+                groupDescription: groupData.description,
+                imageRange: q.image_range || 1,
+                imagesPath: q.images_path || '',
+                text: q.text,
+                type: q.type,
+                options: q.options || [],
+                minSelection: q.min_selection || 1,
+                maxSelection: calculatedMaxSelection,
+                showTextWhen: q.showText_when,
+                condition: q.condition
+              })
+            })
+          }
+          
+          // 更新可见题目列表
+          updateVisibleQuestions()
+          
+          // 重置到第一题
+          currentVisibleIndex.value = 0
+        } else {
+          // 如果没有更多部分，完成测验
+          await completeQuizSession(sessionId.value)
+          completed.value = true
+          emit('complete', getReport())
         }
       }
-      
-      // 调用API提交前20题答案并获取香调图片数据
-      const fragranceResponse = await submitFirst20Questions(sessionId.value, first20Answers)
-      
-      // 创建第21题：香调图片多选题
-      fragranceImageQuestion.value = {
-        id: 'fragrance-image-question',
-        groupId: 'fragrance-group',
-        groupTitle: '香调偏好选择',
-        groupDescription: '请选择你喜欢的香调图片',
-        text: '请选择你喜欢的香调（图片多选）',
-        type: 'image-multiple',
-        options: fragranceResponse.fragrance_images.map((fragrance, index) => ({
-          label: String.fromCharCode(65 + index), // A, B, C...
-          value: fragrance.id,
-          text: fragrance.name,
-          image: fragrance.image_url
-        })),
-        minSelection: 1,
-        maxSelection: 3 // 最多选择3个香调
-      }
-      
-      // 标记前20题已提交
-      isFirst20Submitted.value = true
-      
-      // 更新可见题目列表，添加第21题
-      updateVisibleQuestions()
-      
-      // 移动到第21题
-      currentVisibleIndex.value = 20
-    } else if (currentVisibleIndex.value === totalVisibleQuestions.value - 1) {
-      // 完成测验
-      await completeQuizSession(sessionId.value)
-      completed.value = true
-      emit('complete', getReport())
     } else {
+      // 当前部分内移动到下一题
       currentVisibleIndex.value++
     }
     
     // 加载当前题目的状态
-    setTimeout(() => loadCurrentQuestionState(), 50)
+    setTimeout(() => {
+      if (visibleQuestions.value && visibleQuestions.value.length > 0) {
+        loadCurrentQuestionState()
+      }
+    }, 50)
   } catch (err) {
     console.error('处理下一题失败:', err)
     error.value = `操作失败: ${err.message || '未知错误'}`
@@ -615,7 +898,10 @@ const prevQuestion = async () => {
   try {
     await saveAnswer()
     currentVisibleIndex.value--
-    loadCurrentQuestionState()
+    // 只有在有可见题目时才调用`loadCurrentQuestionState`：
+    if (visibleQuestions.value && visibleQuestions.value.length > 0) {
+      loadCurrentQuestionState()
+    }
   } catch (err) {
     console.error('处理上一题失败:', err)
   } finally {
@@ -624,6 +910,12 @@ const prevQuestion = async () => {
 }
 
 const handleSubmit = async () => {
+  // 检查是否已完成所有部分
+  if (completedParts.value.length < 4) {
+    alert(`请完成所有部分后再提交问卷。当前已完成 ${completedParts.value.length}/4 部分。`)
+    return
+  }
+  
   const report = getReport()
   console.log('📝 提交报告:', report)
   
@@ -639,11 +931,10 @@ const handleSubmit = async () => {
   }
 }
 
-const handleRestart = () => {
+const handleRestart = async () => {
   emit('restart')
 }
 
-// ✅ 暴露 reset 方法供父组件调用
 const reset = () => {
   answers.value = {}
   completed.value = false
@@ -654,6 +945,9 @@ const reset = () => {
   tempMultiAnswer.value = []
   tempTextAnswer.value = ''
   error.value = ''
+  currentPart.value = 1 // 重置为第一部分
+  completedParts.value = [] // 清空已完成部分列表
+  isFirst20Submitted.value = false
   initQuestions()
 }
 
@@ -674,7 +968,7 @@ const getReport = () => ({
 
 // 方法定义
 const shuffleImages = (question) => {
-  if (!question || !currentGroup.value.imageRange) return
+  if (!question || !currentGroup.value || !currentGroup.value.imageRange) return
 
   const {start, end} = currentGroup.value.imageRange;
   let selectedImages = [];
@@ -690,13 +984,13 @@ const shuffleImages = (question) => {
   question.options = selectedImages.map((imgNum, index) => ({
     label: `选项 ${index + 1}`,
     value: `${imgNum}.jpg`,
-    image: `${currentGroup.value.imagesPath}${imgNum}.jpg`
+    image: `${currentGroup.value.imagesPath || ''}${imgNum}.jpg`
   }));
 };
 
 // 监听当前问题变化
 watch(currentQuestion, (newVal) => {
-  if (newVal?.type === 'image-single' && newVal.options && newVal.options.length === 0) {
+  if (newVal && newVal.type === 'image-single' && newVal.options && newVal.options.length === 0) {
     shuffleImages(newVal); // 当切换到新问题时自动加载一组图片
   }
 });
