@@ -138,7 +138,7 @@
                 <div class="ml-4">
                   <span class="text-sm font-medium text-indigo-600">
                     <!-- 根据题目类型显示不同的回答内容 -->
-                    <template v-if="answer.question_type === 'multiple'">
+                    <template v-if="answer.question_type === 'multiple' || answer.question_type === 'image-multiple'">
                       <!-- 多选题，分点显示 -->
                       <div v-if="answer.option_labels && answer.option_labels.length > 0">
                         <div v-for="(label, index) in answer.option_labels" :key="index" class="flex items-start mt-1">
@@ -166,6 +166,10 @@
                           </span>
                         </template>
                       </div>
+                    </template>
+                    <template v-else-if="answer.question_type === 'text'">
+                      <!-- 文本题 -->
+                      <div>{{ answer.text || answer.value || '无回答' }}</div>
                     </template>
                     <template v-else>
                       <!-- 其他题型，使用默认显示 -->
@@ -232,7 +236,7 @@ const reportData = ref({})
 const userAnswers = ref([])
 const loading = ref(false)
 const error = ref('')
-const showAnswerDetails = ref(false)
+const showAnswerDetails = ref(true)
 
 // 根据用户数据生成的性格洞察
 const personalityInsights = ref([
@@ -307,15 +311,58 @@ const loadReport = async () => {
   error.value = ''
   try {
     const response = await getQuizReport(sessionId)
-    reportData.value = response.data
+    // 后端返回的数据结构是 {code: 200, msg: "获取报告成功", data: {...}}
+    const responseData = response.data || response // 兼容两种可能的返回格式
+    reportData.value = responseData
     
     // 从响应中提取用户答案并转换为数组
-    if (response.data.answers) {
+    if (responseData.answers) {
       // 将答案对象转换为数组并添加索引
-      userAnswers.value = Object.values(response.data.answers).map((answer, index) => ({
-        ...answer,
-        question_index: index + 1
-      })).sort((a, b) => {
+      userAnswers.value = Object.values(responseData.answers).map((answer, index) => {
+        // 解析答案值
+        let parsedValue = answer.value
+        try {
+          if (typeof parsedValue === 'string') {
+            parsedValue = JSON.parse(parsedValue)
+          }
+        } catch (e) {
+          console.warn('解析答案值失败:', e)
+        }
+        
+        // 处理不同类型的答案
+        let optionLabel = null
+        let optionLabels = null
+        let textValue = null
+        
+        if (answer.question_type === 'single' || answer.question_type === 'single-with-text') {
+          // 单选题，提取选项标签
+          if (typeof parsedValue === 'object' && parsedValue.value) {
+            optionLabel = parsedValue.value
+            textValue = parsedValue.text || null
+          } else if (typeof parsedValue === 'string') {
+            optionLabel = parsedValue
+          }
+        } else if (answer.question_type === 'multiple' || answer.question_type === 'image-multiple') {
+          // 多选题，提取选项标签数组
+          if (Array.isArray(parsedValue)) {
+            optionLabels = parsedValue
+          } else if (typeof parsedValue === 'object' && parsedValue.values) {
+            optionLabels = parsedValue.values
+          }
+        } else if (answer.question_type === 'text') {
+          // 文本题
+          textValue = parsedValue
+        }
+        
+        return {
+          ...answer,
+          question_index: index + 1,
+          value: parsedValue,
+          option_label: optionLabel || answer.option_label,
+          option_labels: optionLabels || answer.option_labels,
+          text: textValue || answer.text
+        }
+      }).sort((a, b) => {
         return parseInt(a.question_index) - parseInt(b.question_index)
       })
     } else {

@@ -101,6 +101,8 @@ class UserQuizSession(models.Model):
     end_time = models.DateTimeField(null=True, blank=True, verbose_name="结束时间")
     duration_ms = models.IntegerField(null=True, blank=True, verbose_name="持续时间(毫秒)")
     current_part = models.IntegerField(default=1, verbose_name="当前所处阶段（1-4）")
+    main_fragrance = models.CharField(max_length=50, default="柑橘类", blank=True, verbose_name="主香调")
+    secondary_fragrance = models.CharField(max_length=50, default="花卉类", blank=True, verbose_name="次香调")
 
     class Meta:
         db_table = 'user_quiz_session'

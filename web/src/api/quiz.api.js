@@ -125,7 +125,7 @@ export const resumeIncompleteSession = async (sessionId) => {
 export const getQuizReport = async (sessionId) => {
   try {
     const response = await api.get(`/quiz/sessions/${sessionId}/report/`)
-    return response
+    return response.data
   } catch (error) {
     console.error('获取测验报告失败:', error)
     throw error
@@ -159,12 +159,55 @@ export const submitFirst20Questions = async (sessionId, answers) => {
 // 使用AI扩写文本
 export const extendTextWithAI = async (text) => {
   try {
-    const response = await api.post('/quiz/extend-text-with-ai/', {
+    const response = await api.post('/quiz/extend-text/', {
       text: text
     })
     return response.data
   } catch (error) {
     console.error('AI扩写失败:', error)
+    throw error
+  }
+}
+
+// 分阶段获取题目数据
+export const getPhasedQuestions = async (part, sessionId = null) => {
+  try {
+    let url = `/quiz/phased-questions/?part=${part}`
+    if (sessionId) {
+      url += `&session_id=${sessionId}`
+    }
+    const response = await api.get(url)
+    return response.data
+  } catch (error) {
+    console.error('分阶段获取题目失败:', error)
+    throw error
+  }
+}
+
+// 分析用户答题记录并返回主香调和次香调
+export const analyzeFragrancePreferences = async (sessionId) => {
+  try {
+    const response = await api.post('/quiz/analyze-fragrance/', {
+      session_id: sessionId
+    })
+    return response.data
+  } catch (error) {
+    console.error('分析香调偏好失败:', error)
+    throw error
+  }
+}
+
+// 获取香调类别图片列表
+export const getFragranceImages = async (categoryType) => {
+  try {
+    const response = await api.get('/quiz/fragrance-images/', {
+      params: {
+        category_type: categoryType
+      }
+    })
+    return response.data
+  } catch (error) {
+    console.error('获取香调图片失败:', error)
     throw error
   }
 }

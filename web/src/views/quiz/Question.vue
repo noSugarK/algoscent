@@ -47,6 +47,15 @@
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
             </svg>
           </button>
+          <button
+              v-if="currentQuestion.type === 'image-multiple' && currentQuestion.id === 'q4'"
+              @click="refreshFragranceImages"
+              class="flex items-center space-x-2 px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium rounded-xl transition-colors">
+            <span>换一组</span>
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+            </svg>
+          </button>
         </div>
 
         <!-- Dynamic Question Component -->
@@ -114,7 +123,7 @@
 <script setup>
 import {ref, computed, onMounted, watch, markRaw} from 'vue'
 import {useRoute} from 'vue-router'
-import {getQuestionGroups, createQuizSession, saveUserAnswer, completeQuizSession, resumeIncompleteSession, submitFirst20Questions, getPhasedQuestions, checkIncompleteSession} from '@/api/quiz.api.js'
+import {getQuestionGroups, createQuizSession, saveUserAnswer, completeQuizSession, resumeIncompleteSession, submitFirst20Questions, getPhasedQuestions, checkIncompleteSession, analyzeFragrancePreferences, getFragranceImages} from '@/api/quiz.api.js'
 import ResultDisplay from '@/components/quiz/ResultDisplay.vue'
 
 // 题型组件
@@ -318,27 +327,41 @@ const initQuestions = async () => {
       allQuestionsWithGroup.value = []
       
       // 处理题目数据
-      if (groupData.questions && Array.isArray(groupData.questions)) {
-        groupData.questions.forEach(q => {
-          // 优先使用数据库中的max_selection字段，兼容maxSelection
-          const calculatedMaxSelection = q.max_selection || q.maxSelection;
-          
-          allQuestionsWithGroup.value.push({
-            id: q.id,
-            groupId: groupData.id,
-            groupTitle: groupData.title,
-            groupDescription: groupData.description,
-            imageRange: q.image_range || 1,
-            imagesPath: q.images_path || '',
-            text: q.text,
-            type: q.type,
-            options: q.options || [],
-            minSelection: q.min_selection || 1,
-            maxSelection: calculatedMaxSelection,
-            showTextWhen: q.showText_when,
-            condition: q.condition
-          })
-        })
+            if (groupData.questions && Array.isArray(groupData.questions)) {
+              groupData.questions.forEach(q => {
+                // 优先使用数据库中的max_selection字段，兼容maxSelection
+                const calculatedMaxSelection = q.max_selection || q.maxSelection;
+                
+                allQuestionsWithGroup.value.push({
+                  id: q.id,
+                  groupId: groupData.id,
+                  groupTitle: groupData.title,
+                  groupDescription: groupData.description,
+                  imageRange: q.image_range || 1,
+                  imagesPath: q.images_path || '',
+                  text: q.text,
+                  type: q.type,
+                  options: q.options || [],
+                  minSelection: q.min_selection || 1,
+                  maxSelection: calculatedMaxSelection,
+                  showTextWhen: q.showText_when,
+                  condition: q.condition,
+                  // 添加主香调和次香调字段
+                  mainFragrance: groupData.mainFragrance,
+                  secondaryFragrance: groupData.secondaryFragrance
+                })
+              })
+        
+        // 如果是第四部分，保存主香调和次香调信息
+        if (currentPart.value === 4) {
+          // 保存主香调和次香调信息
+          if (groupData.mainFragrance) {
+            currentGroup.value.mainFragrance = groupData.mainFragrance;
+          }
+          if (groupData.secondaryFragrance) {
+            currentGroup.value.secondaryFragrance = groupData.secondaryFragrance;
+          }
+        }
       }
       
       // 如果是第4部分（香调图片题目），标记前20题已提交
@@ -598,7 +621,9 @@ const currentGroup = computed(() => currentQuestion.value ? {
   title: currentQuestion.value.groupTitle,
   description: currentQuestion.value.groupDescription,
   imageRange: currentQuestion.value.imageRange,
-  imagesPath: currentQuestion.value.imagesPath
+  imagesPath: currentQuestion.value.imagesPath,
+  mainFragrance: currentQuestion.value.mainFragrance,
+  secondaryFragrance: currentQuestion.value.secondaryFragrance
 } : {})
 
 const visibleQuestionIndex = computed(() => currentVisibleIndex.value)
@@ -802,6 +827,28 @@ const nextQuestion = async () => {
         // 加载下一部分
         let nextPart = currentPart.value + 1
         
+        // 特殊处理第3部分完成后调用香调分析API
+        if (currentPart.value === 3 && nextPart === 4) {
+          try {
+            // 调用香调分析API
+            const fragranceData = await analyzeFragrancePreferences(sessionId.value)
+            console.log('✅ 香调分析结果:', fragranceData)
+            
+            // 保存主香调和次香调信息
+            if (fragranceData.main_fragrance) {
+              currentGroup.value.mainFragrance = fragranceData.main_fragrance;
+            }
+            if (fragranceData.secondary_fragrance) {
+              currentGroup.value.secondaryFragrance = fragranceData.secondary_fragrance;
+            }
+          } catch (error) {
+            console.error('香调分析失败:', error)
+            // 使用默认值
+            currentGroup.value.mainFragrance = "柑橘类";
+            currentGroup.value.secondaryFragrance = "蔬果类";
+          }
+        }
+        
         // 特殊处理第4部分（香调图片题目）
         if (nextPart === 4 && !isFirst20Submitted.value) {
           // 如果是第4部分且尚未提交前20题答案，需要先提交
@@ -858,6 +905,15 @@ const nextQuestion = async () => {
                 condition: q.condition
               })
             })
+            
+            // 如果是第四部分，保存主香调和次香调信息到题目数据中
+            if (currentPart.value === 4) {
+              // 将主香调和次香调信息添加到每个题目中
+              allQuestionsWithGroup.value.forEach(q => {
+                q.mainFragrance = groupData.mainFragrance;
+                q.secondaryFragrance = groupData.secondaryFragrance;
+              });
+            }
           }
           
           // 更新可见题目列表
@@ -988,10 +1044,115 @@ const shuffleImages = (question) => {
   }));
 };
 
+// 新增函数：处理第四部分图片选项
+const shuffleFragranceImages = async (question) => {
+  if (!question || question.id !== 'q4') return;
+  
+  // 获取主香调和次香调，不设置默认值，完全按照后端返回的信息
+  const mainFragrance = currentGroup.value.mainFragrance;
+  const secondaryFragrance = currentGroup.value.secondaryFragrance;
+  
+  // 检查是否获取到了主香调和次香调
+  if (!mainFragrance || !secondaryFragrance) {
+    console.error('未能获取到主香调或次香调信息:', { mainFragrance, secondaryFragrance });
+    // 使用空数组作为选项，不设置默认图片
+    question.options = [];
+    return;
+  }
+  
+  console.log(currentGroup.value)
+  console.log('🌸 主香调:', mainFragrance, '次香调:', secondaryFragrance);
+  
+  try {
+    // 从API获取主香调和次香调的图片列表
+    const mainResponse = await getFragranceImages(mainFragrance);
+    const secondaryResponse = await getFragranceImages(secondaryFragrance);
+    
+    const mainImages = mainResponse.images || [];
+    const secondaryImages = secondaryResponse.images || [];
+    
+    // 合并所有图片
+    const allImages = [...mainImages, ...secondaryImages];
+    
+    // 如果图片不足8张，使用默认图片填充
+    if (allImages.length < 8) {
+      console.warn('香调图片不足8张，使用默认图片填充');
+      const defaultImages = Array.from({length: 8 - allImages.length}, (_, i) => ({
+        label: `默认图片${i + 1}`,
+        value: `/images/smell/default/${i + 1}.jpg`,
+        image: `/images/smell/default/${i + 1}.jpg`
+      }));
+      allImages.push(...defaultImages);
+    }
+    
+    // 打乱图片顺序
+    const shuffledImages = shuffleArray([...allImages]);
+    
+    // 只取前8张图片
+    const selectedImages = shuffledImages.slice(0, 8);
+    
+    // 更新题目选项
+    question.options = selectedImages;
+    
+    console.log('🖼️ 已生成香调图片选项:', selectedImages);
+  } catch (error) {
+    console.error('获取香调图片失败:', error);
+    // 使用默认图片作为备选
+    const defaultImages = Array.from({length: 8}, (_, i) => ({
+      label: `默认图片${i + 1}`,
+      value: `/images/smell/default/${i + 1}.jpg`,
+      image: `/images/smell/default/${i + 1}.jpg`
+    }));
+    question.options = defaultImages;
+  }
+};
+
+// 刷新香调图片选项
+const refreshFragranceImages = async () => {
+  if (!currentQuestion.value || currentQuestion.value.id !== 'q4') return;
+  
+  console.log('🔄 刷新香调图片选项...');
+  await shuffleFragranceImages(currentQuestion.value);
+};
+
+// 获取指定类别的随机图片
+// 获取指定类别的随机图片
+const getRandomImagesForCategory = (category, count) => {
+  const images = [];
+  const basePath = `/images/smell/${category}/`;
+  
+  // 假设每个香调类别文件夹中有足够多的图片（1-20.jpg）
+  // 随机选择count张不重复的图片
+  const availableImages = Array.from({length: 20}, (_, i) => i + 1); // 生成1-20的数字
+  const shuffled = shuffleArray([...availableImages]); // 打乱顺序
+  
+  // 取前count张图片
+  for (let i = 0; i < count && i < shuffled.length; i++) {
+    const imageNum = shuffled[i];
+    const fileName = `${imageNum}.jpg`;
+    images.push({
+      label: fileName.replace('.jpg', ''), // 使用图片文件名作为选项文字
+      value: `${basePath}${fileName}`,
+      image: `${basePath}${fileName}`
+    });
+  }
+  
+  return images;
+};
+
 // 监听当前问题变化
-watch(currentQuestion, (newVal) => {
+// 监听当前问题变化
+watch(currentQuestion, async (newVal) => {
   if (newVal && newVal.type === 'image-single' && newVal.options && newVal.options.length === 0) {
     shuffleImages(newVal); // 当切换到新问题时自动加载一组图片
+  }
+  
+  // 处理第四部分图片多选题
+  if (newVal && newVal.id === 'q4' && newVal.type === 'image-multiple') {
+    console.log('🔄 检测到第四部分图片多选题，准备加载香调图片...');
+    // 清空现有选项，确保重新生成
+    newVal.options = [];
+    await shuffleFragranceImages(newVal); // 当切换到第四部分时自动加载香调图片
   }
 });
 </script>
