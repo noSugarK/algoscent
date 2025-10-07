@@ -5,6 +5,7 @@ from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from django.utils.crypto import get_random_string
+from django.utils import timezone
 
 from backend import settings
 from .models import (
@@ -722,10 +723,12 @@ class UserQuizSessionViewSet(
 
         dashscope_api_key = getattr(settings, 'DASHSCOPE_API_KEY', '')
         if not dashscope_api_key:
-            return Response(
-                {'detail': '阿里云百炼API密钥未配置。'},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
+            print("阿里云百炼API密钥未配置")
+            # 返回默认值，而不是Response对象
+            return {
+                '主香调': '花香',
+                '次香调': '果香'
+            }
 
         response = Application.call(
             # 若没有配置环境变量，可用百炼API Key将下行替换为：api_key="sk-xxx"。但不建议在生产环境中直接将API Key硬编码到代码中，以减少API Key泄露风险。
@@ -738,12 +741,25 @@ class UserQuizSessionViewSet(
             print(f'code={response.status_code}')
             print(f'message={response.message}')
             print(f'请参考文档：https://help.aliyun.com/zh/model-studio/developer-reference/error-code')
+            # 返回默认值
+            return {
+                '主香调': '花香',
+                '次香调': '果香'
+            }
         else:
             # print(response.output.text)
             pass
 
-        result_dict = json.loads(response.output.text)
-        return result_dict
+        try:
+            result_dict = json.loads(response.output.text)
+            return result_dict
+        except json.JSONDecodeError as e:
+            print(f"解析AI返回结果失败: {e}")
+            # 返回默认值
+            return {
+                '主香调': '花香',
+                '次香调': '果香'
+            }
 
 class UserAnswerViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
     """用户答题记录视图集"""
