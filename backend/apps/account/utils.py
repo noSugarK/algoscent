@@ -5,7 +5,8 @@ from cryptography.hazmat.primitives.asymmetric import padding
 import os
 
 def decrypt_with_private_key(encrypted_data: str) -> str:
-    key_path = os.path.join(os.path.dirname(__file__), '../account/keys', 'private_key.pem')
+    key_path = os.path.join(os.path.dirname(__file__), 'keys', 'private_key.pem')
+    print(key_path)
     with open(key_path, 'rb') as key_file:
         private_key = serialization.load_pem_private_key(
             key_file.read(),

@@ -27,7 +27,7 @@ class LoginThrottle(UserRateThrottle):
 
 class GetPublicKeyView(View):
     def get(self, request):
-        key_path = os.path.join(os.path.dirname(__file__), '../account/keys', 'public_key.pem')
+        key_path = os.path.join(os.path.dirname(__file__), 'keys', 'public_key.pem')
         with open(key_path, 'r') as f:
             public_key = f.read()
         return JsonResponse({'public_key': public_key})
