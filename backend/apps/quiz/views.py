@@ -554,21 +554,49 @@ class UserQuizSessionViewSet(
                     # 为q4添加动态生成的选项
                     question._dynamic_options = []
                     
-                    # 添加主香调选项
-                    main_option = DynamicOption(
-                        label=fragrance_result['main_fragrance'],
-                        value=fragrance_result['main_fragrance'],
-                        image=f"{question.images_path}{fragrance_result['main_fragrance']}.png" if fragrance_result['main_fragrance'] else ""
-                    )
-                    question._dynamic_options.append(main_option)
+                    # 获取主香调图片
+                    main_images = _get_fragrance_images(fragrance_result['main_fragrance'])
+                    if main_images:
+                        # 使用第一张图片作为主香调选项
+                        main_image = main_images[0]
+                        main_option = DynamicOption(
+                            label=fragrance_result['main_fragrance'],
+                            value=fragrance_result['main_fragrance'],
+                            image=main_image['image']
+                        )
+                        question._dynamic_options.append(main_option)
+                        # 保存主香调图片列表到结果中，供前端使用
+                        fragrance_result['main_images'] = main_images
+                    else:
+                        # 如果没有找到图片，使用默认图片
+                        main_option = DynamicOption(
+                            label=fragrance_result['main_fragrance'],
+                            value=fragrance_result['main_fragrance'],
+                            image=f"/images/smell/default/1.jpg"
+                        )
+                        question._dynamic_options.append(main_option)
                     
-                    # 添加次香调选项
-                    secondary_option = DynamicOption(
-                        label=fragrance_result['secondary_fragrance'],
-                        value=fragrance_result['secondary_fragrance'],
-                        image=f"{question.images_path}{fragrance_result['secondary_fragrance']}.png" if fragrance_result['secondary_fragrance'] else ""
-                    )
-                    question._dynamic_options.append(secondary_option)
+                    # 获取次香调图片
+                    secondary_images = _get_fragrance_images(fragrance_result['secondary_fragrance'])
+                    if secondary_images:
+                        # 使用第一张图片作为次香调选项
+                        secondary_image = secondary_images[0]
+                        secondary_option = DynamicOption(
+                            label=fragrance_result['secondary_fragrance'],
+                            value=fragrance_result['secondary_fragrance'],
+                            image=secondary_image['image']
+                        )
+                        question._dynamic_options.append(secondary_option)
+                        # 保存次香调图片列表到结果中，供前端使用
+                        fragrance_result['secondary_images'] = secondary_images
+                    else:
+                        # 如果没有找到图片，使用默认图片
+                        secondary_option = DynamicOption(
+                            label=fragrance_result['secondary_fragrance'],
+                            value=fragrance_result['secondary_fragrance'],
+                            image=f"/images/smell/default/2.jpg"
+                        )
+                        question._dynamic_options.append(secondary_option)
             
             return questions
         except QuizQuestionGroup.DoesNotExist:
@@ -838,13 +866,19 @@ def get_phased_questions(request):
             # 从数据库中重新查询会话，确保获取最新的香调信息
             db_session = UserQuizSession.objects.get(session_id=session.session_id)
             
+            # 获取主香调和次香调的图片列表
+            main_images = _get_fragrance_images(db_session.main_fragrance) if db_session.main_fragrance else []
+            secondary_images = _get_fragrance_images(db_session.secondary_fragrance) if db_session.secondary_fragrance else []
+            
             return_data = {
                 'id': group.id,
                 'title': group.title,
                 'description': group.description,
                 'questions': serializer.data,
                 'mainFragrance': db_session.main_fragrance,
-                'secondaryFragrance': db_session.secondary_fragrance
+                'secondaryFragrance': db_session.secondary_fragrance,
+                'main_images': main_images,
+                'secondary_images': secondary_images
             }
             
             return Response({

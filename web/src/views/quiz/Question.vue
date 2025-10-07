@@ -878,11 +878,11 @@ const isAnswered = computed(() => {
   } else if (q.type === 'single-with-text') {
     if (!tempAnswer.value) return false
     if (tempAnswer.value === q.showTextWhen) {
-      return !!tempTextAnswer.value && tempTextAnswer.value.trim()
+      return !!tempTextAnswer.value && (typeof tempTextAnswer.value === 'string' ? tempTextAnswer.value.trim() : tempTextAnswer.value)
     }
     return true
   } else if (q.type === 'text') {
-    return !!tempTextAnswer.value && tempTextAnswer.value.trim()
+    return !!tempTextAnswer.value && (typeof tempTextAnswer.value === 'string' ? tempTextAnswer.value.trim() : tempTextAnswer.value)
   }
   return false
 })
@@ -926,7 +926,9 @@ const loadCurrentQuestionState = () => {
       console.log(`🔄 解析JSON字符串格式的答案:`, parsedSaved)
     } catch (e) {
       // 检查是否是纯文本格式的答案（不包含JSON结构）
-      const isPlainText = !saved.trim().startsWith('{') && !saved.trim().startsWith('[')
+      const isPlainText = typeof saved === 'string' && 
+                         !saved.trim().startsWith('{') && 
+                         !saved.trim().startsWith('[')
       
       if (isPlainText) {
         // 对于纯文本格式的答案，不显示错误信息
@@ -979,20 +981,21 @@ const loadCurrentQuestionState = () => {
         const parsed = JSON.parse(parsedSaved);
         // 如果解析结果是对象，尝试获取其value或text属性
         if (typeof parsed === 'object') {
-          tempTextAnswer.value = parsed.value || parsed.text || '';
+          tempTextAnswer.value = String(parsed.value || parsed.text || '');
         } else {
-          // 否则使用解析后的值
-          tempTextAnswer.value = parsed;
+          // 否则使用解析后的值，并转换为字符串
+          tempTextAnswer.value = String(parsed || '');
         }
       } catch (e) {
         // 如果解析失败，使用原始字符串
         tempTextAnswer.value = parsedSaved;
       }
     } else if (parsedSaved && typeof parsedSaved === 'object') {
-      // 如果parsedSaved是对象，尝试获取其value或text属性
-      tempTextAnswer.value = parsedSaved.value || parsedSaved.text || '';
+      // 如果parsedSaved是对象，尝试获取其value或text属性，并转换为字符串
+      tempTextAnswer.value = String(parsedSaved.value || parsedSaved.text || '');
     } else {
-      tempTextAnswer.value = parsedSaved || '';
+      // 对于其他类型（数字、布尔值等），转换为字符串
+      tempTextAnswer.value = String(parsedSaved || '');
     }
     console.log(`✅ 文本题 ${q.id} 设置答案为:`, tempTextAnswer.value)
   }

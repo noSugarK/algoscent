@@ -12,11 +12,11 @@
     <div class="flex justify-end mt-3">
       <button
         @click="handleAIExtend"
-        :disabled="!textAnswer?.trim() || loading"
+        :disabled="!(typeof textAnswer === 'string' ? textAnswer?.trim() : textAnswer) || loading"
         class="flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors"
         :class="{
-          'bg-gradient-to-r from-indigo-500 to-purple-500 text-white hover:from-indigo-600 hover:to-purple-600': textAnswer?.trim() && !loading,
-          'bg-gray-200 text-gray-400 cursor-not-allowed': !textAnswer?.trim() || loading
+          'bg-gradient-to-r from-indigo-500 to-purple-500 text-white hover:from-indigo-600 hover:to-purple-600': (typeof textAnswer === 'string' ? textAnswer?.trim() : textAnswer) && !loading,
+          'bg-gray-200 text-gray-400 cursor-not-allowed': !(typeof textAnswer === 'string' ? textAnswer?.trim() : textAnswer) || loading
         }"
       >
         <svg v-if="!loading" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -54,7 +54,7 @@ const handleInput = () => {
 }
 
 const handleAIExtend = async () => {
-  if (!textAnswer.value?.trim() || loading.value) return
+  if (!(typeof textAnswer.value === 'string' ? textAnswer.value?.trim() : textAnswer.value) || loading.value) return
   
   loading.value = true
   try {
