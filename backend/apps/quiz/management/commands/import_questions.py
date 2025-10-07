@@ -272,7 +272,7 @@ class Command(BaseCommand):
                     {
                         "id": "q4",
                         "text": "根据您的回答，以下哪些香调组合最适合您？（可多选）",
-                        "type": "multiple",
+                        "type": "image-multiple",
                         "image_range": True,  # 图片选项
                         "images_path": "/images/smell/",  # 图片路径
                         "min_selection": 1,
