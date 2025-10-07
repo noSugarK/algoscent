@@ -21,6 +21,5 @@ urlpatterns = [
     path('all-questions/', views.get_all_questions, name='all-questions'),
     path('phased-questions/', views.get_phased_questions, name='phased-questions'),
     path('extend-text/', views.extend_text_with_ai, name='extend-text'),
-    path('analyze-fragrance/', views.analyze_fragrance_preferences, name='analyze-fragrance'),
     path('fragrance-images/', views.get_fragrance_images, name='fragrance-images'),
 ]

@@ -97,7 +97,13 @@ const emit = defineEmits(['restart', 'submit'])
 const router = useRouter()
 const showDetails = ref(false)
 
-const onRestart = () => emit('restart')
+const onRestart = () => {
+  // 清除本地存储的会话数据
+  localStorage.removeItem('currentQuizSession')
+  
+  // 触发restart事件
+  emit('restart')
+}
 const onSubmit = () => emit('submit')
 const onHistory = () => {
   router.push('/quiz/history') // 可选：启用路由跳转

@@ -101,8 +101,8 @@ class UserQuizSession(models.Model):
     end_time = models.DateTimeField(null=True, blank=True, verbose_name="结束时间")
     duration_ms = models.IntegerField(null=True, blank=True, verbose_name="持续时间(毫秒)")
     current_part = models.IntegerField(default=1, verbose_name="当前所处阶段（1-4）")
-    main_fragrance = models.CharField(max_length=50, default="柑橘类", blank=True, verbose_name="主香调")
-    secondary_fragrance = models.CharField(max_length=50, default="花卉类", blank=True, verbose_name="次香调")
+    main_fragrance = models.CharField(max_length=50, default="", blank=True, verbose_name="主香调")
+    secondary_fragrance = models.CharField(max_length=50, default="", blank=True, verbose_name="次香调")
 
     class Meta:
         db_table = 'user_quiz_session'
@@ -129,7 +129,6 @@ class UserAnswer(models.Model):
     )
     value = models.TextField(null=True, blank=True, verbose_name="答案值")
     text = models.TextField(null=True, blank=True, verbose_name="文本答案")
-    part = models.IntegerField(default=1, verbose_name="所属阶段（1-4）")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="答题时间")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="更新时间")
 

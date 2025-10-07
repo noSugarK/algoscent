@@ -143,18 +143,7 @@ export const deleteIncompleteSession = async (sessionId) => {
   }
 }
 
-// 提交前20题答案并获取香调偏好
-export const submitFirst20Questions = async (sessionId, answers) => {
-  try {
-    const response = await api.post(`/quiz/sessions/${sessionId}/submit-first-20/`, {
-      answers: answers
-    })
-    return response.data
-  } catch (error) {
-    console.error('提交前20题答案失败:', error)
-    throw error
-  }
-}
+
 
 // 使用AI扩写文本
 export const extendTextWithAI = async (text) => {
@@ -184,26 +173,35 @@ export const getPhasedQuestions = async (part, sessionId = null) => {
   }
 }
 
-// 分析用户答题记录并返回主香调和次香调
-export const analyzeFragrancePreferences = async (sessionId) => {
+// 提交当前阶段，进入下一阶段
+export const submitPart = async (sessionId, currentPart, answers) => {
   try {
-    const response = await api.post('/quiz/analyze-fragrance/', {
-      session_id: sessionId
+    const response = await api.post(`/quiz/sessions/${sessionId}/submit-part/`, {
+      session_id: sessionId,
+      current_part: currentPart,
+      answers: answers
     })
     return response.data
   } catch (error) {
-    console.error('分析香调偏好失败:', error)
+    console.error('提交阶段失败:', error)
     throw error
   }
 }
 
 // 获取香调类别图片列表
-export const getFragranceImages = async (categoryType) => {
+export const getFragranceImages = async (categoryType, sessionId = null) => {
   try {
+    const params = {
+      category_type: categoryType
+    }
+    
+    // 如果提供了sessionId，添加到参数中
+    if (sessionId) {
+      params.session_id = sessionId
+    }
+    
     const response = await api.get('/quiz/fragrance-images/', {
-      params: {
-        category_type: categoryType
-      }
+      params: params
     })
     return response.data
   } catch (error) {

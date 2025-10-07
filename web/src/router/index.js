@@ -39,11 +39,12 @@ router.beforeEach((to, from, next) => {
   
   // 控制测验问题页面的访问
   if (to.path === '/quiz/question') {
-    // 允许的来源：测验主页或历史记录页面，或者带有sessionId参数
+    // 允许的来源：测验主页或历史记录页面，或者带有sessionId参数，或者带有new=true参数
     const allowedFromPaths = ['/quiz', '/quiz/history']
     const hasSessionId = to.query.sessionId !== undefined
+    const isNewSession = to.query.new === 'true'
     
-    if (!allowedFromPaths.includes(from.path) && !hasSessionId) {
+    if (!allowedFromPaths.includes(from.path) && !hasSessionId && !isNewSession) {
       // 不允许直接访问，重定向到测验主页
       next('/quiz')
       return

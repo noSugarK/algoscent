@@ -104,7 +104,6 @@ class UserAnswerCreateSerializer(serializers.Serializer):
     question_id = serializers.CharField(required=True)
     value = serializers.JSONField(required=False, allow_null=True)
     text = serializers.CharField(required=False, allow_null=True, allow_blank=True)
-    part = serializers.IntegerField(required=False, default=1)
 
     def validate_question_id(self, value):
         try:
@@ -118,7 +117,6 @@ class UserAnswerCreateSerializer(serializers.Serializer):
         question_id = validated_data['question_id']
         value = validated_data.get('value')
         text = validated_data.get('text')
-        part = validated_data.get('part', 1)
         
         try:
             session = UserQuizSession.objects.get(session_id=session_id)
@@ -131,7 +129,7 @@ class UserAnswerCreateSerializer(serializers.Serializer):
             user_answer, created = UserAnswer.objects.update_or_create(
                 session=session,
                 question=question,
-                defaults={'value': value_str, 'text': text, 'part': part}
+                defaults={'value': value_str, 'text': text}
             )
             
             return user_answer

@@ -200,8 +200,13 @@ const continuePreviousSession = async () => {
 const startNewSession = () => {
   showIncompleteDialog.value = false
   console.log('🚀 开始新测试，跳转到题目页面')
-  // 直接跳转到题目页面，不传递sessionId会自动创建新会话
-  router.push('/quiz/question')
+  // 清除本地存储的会话数据，确保创建新会话
+  localStorage.removeItem('currentQuizSession')
+  // 跳转到测验页面，并传递new=true参数明确指示需要创建新会话
+  router.push({
+    path: '/quiz/question',
+    query: { new: 'true' }
+  })
 }
 
 // 由于使用路由跳转，QuizHome不再处理问卷完成和重启逻辑

@@ -122,8 +122,8 @@
 
 <script setup>
 import {ref, computed, onMounted, watch, markRaw} from 'vue'
-import {useRoute} from 'vue-router'
-import {getQuestionGroups, createQuizSession, saveUserAnswer, completeQuizSession, resumeIncompleteSession, submitFirst20Questions, getPhasedQuestions, checkIncompleteSession, analyzeFragrancePreferences, getFragranceImages} from '@/api/quiz.api.js'
+import {useRoute, useRouter} from 'vue-router'
+import {getQuestionGroups, createQuizSession, saveUserAnswer, completeQuizSession, resumeIncompleteSession, getPhasedQuestions, checkIncompleteSession, getFragranceImages, submitPart} from '@/api/quiz.api.js'
 import ResultDisplay from '@/components/quiz/ResultDisplay.vue'
 
 // 题型组件
@@ -168,7 +168,6 @@ const tempTextAnswer = ref('')
 const loading = ref(false)
 const error = ref('')
 const completed = ref(false)
-const isFirst20Submitted = ref(false)
 const loadedSessionData = ref(null)
 const allQuestionsWithGroup = ref([])
 const visibleQuestions = ref([])
@@ -180,16 +179,121 @@ const fragranceImageQuestion = ref(null)
 const route = useRoute()
 
 onMounted(() => {
-  initQuestions()
+  // 检查URL参数中是否有new=true，如果有则强制创建新会话
+  const forceNew = route.query.new === 'true'
+  // 确保使用URL中的sessionId
+  const urlSessionId = route.query.sessionId
+  if (urlSessionId) {
+    sessionId.value = urlSessionId
+  }
+  initQuestions(forceNew)
 })
 
-const initQuestions = async () => {
+const initQuestions = async (forceNew = false) => {
   loading.value = true
   error.value = ''
   
   try {
-    // 首先检查是否有未完成的会话
-    if (!props.initialSession && !loadedSessionData.value) {
+    // 检查URL参数
+    const route = useRoute()
+    const urlSessionId = route.query.sessionId
+    const isNew = route.query.new === 'true' || forceNew
+    
+    console.log('🔍 初始化题目，参数:', { urlSessionId, isNew, forceNew })
+    
+    if (urlSessionId && !isNew) {
+      // 如果有sessionId且不是强制新建，则尝试恢复会话
+      sessionId.value = urlSessionId
+      console.log('🔄 尝试恢复会话:', sessionId.value)
+      
+      try {
+        const result = await resumeIncompleteSession(sessionId.value)
+        loadedSessionData.value = result.session
+        answers.value = result.answers
+        
+        // 确定当前部分
+        currentPart.value = result.session.current_part || 1
+        
+        // 标记已完成的部分
+        completedParts.value = []
+        for (let i = 1; i < currentPart.value; i++) {
+          completedParts.value.push(i)
+        }
+        
+        console.log('✅ 会话恢复成功:', {
+          sessionId: sessionId.value,
+          currentPart: currentPart.value,
+          completedParts: completedParts.value
+        })
+        
+        // 加载当前部分的题目
+        const response = await getPhasedQuestions(currentPart.value, sessionId.value)
+        const groupData = response.data
+        
+        // 构建题目序列
+        allQuestionsWithGroup.value = []
+        
+        // 处理题目数据
+        if (groupData.questions && Array.isArray(groupData.questions)) {
+          groupData.questions.forEach(q => {
+            // 优先使用数据库中的max_selection字段，兼容maxSelection
+            const calculatedMaxSelection = q.max_selection || q.maxSelection;
+            
+            allQuestionsWithGroup.value.push({
+              id: q.id,
+              groupId: groupData.id,
+              groupTitle: groupData.title,
+              groupDescription: groupData.description,
+              imageRange: q.image_range || 1,
+              imagesPath: q.images_path || '',
+              text: q.text,
+              type: q.type,
+              options: q.options || [],
+              minSelection: q.min_selection || 1,
+              maxSelection: calculatedMaxSelection,
+              showTextWhen: q.showText_when,
+              condition: q.condition
+            })
+          })
+          
+          // 如果是第四部分，保存主香调和次香调信息到题目数据中
+          if (currentPart.value === 4) {
+            // 将主香调和次香调信息添加到每个题目中
+            allQuestionsWithGroup.value.forEach(q => {
+              q.mainFragrance = groupData.mainFragrance;
+              q.secondaryFragrance = groupData.secondaryFragrance;
+              q.main_images = groupData.main_images;
+              q.secondary_images = groupData.secondary_images;
+            });
+          }
+        }
+        
+        // 更新可见题目列表
+        updateVisibleQuestions()
+        
+        // 重置到第一题
+        currentVisibleIndex.value = 0
+        
+        return
+      } catch (err) {
+        console.error('恢复会话失败:', err)
+        // 恢复失败时继续正常流程
+      }
+    }
+    
+    // 如果强制创建新会话，清除所有会话数据
+    if (forceNew) {
+      console.log('🔄 强制创建新会话，清除所有会话数据')
+      sessionId.value = ''
+      answers.value = {}
+      loadedSessionData.value = null
+      completedParts.value = []
+      currentPart.value = 1
+      localStorage.removeItem('currentQuizSession')
+    }
+    
+    // 如果不是强制创建新会话且没有初始会话数据，检查是否有未完成的会话
+    if (!forceNew && !props.initialSession && !loadedSessionData.value) {
       try {
         const incompleteSession = await checkIncompleteSession()
         if (incompleteSession.data && incompleteSession.data.session_id) {
@@ -219,7 +323,7 @@ const initQuestions = async () => {
     }
     
     // 检查是否有初始会话数据或从本地存储加载的会话数据
-    if ((props.initialSession && props.initialSession.session_id) || loadedSessionData.value) {
+    if (!forceNew && ((props.initialSession && props.initialSession.session_id) || loadedSessionData.value)) {
       // console.log('✅ 检测到会话数据，准备恢复')
       // 使用之前的会话ID
       const sessionData = props.initialSession || loadedSessionData.value
@@ -366,13 +470,14 @@ const initQuestions = async () => {
       
       // 如果是第4部分（香调图片题目），标记前20题已提交
       if (partToLoad === 4) {
-        isFirst20Submitted.value = true
+        // 不再需要isFirst20Submitted标记，直接进入第4部分
       }
     } else {
       // 创建新的测验会话
       try {
         const sessionData = await createQuizSession()
         sessionId.value = sessionData.session_id
+        console.log('✅ 创建新会话成功，会话ID:', sessionId.value)
       } catch (sessionError) {
         console.warn('创建会话失败，使用临时会话ID:', sessionError)
         // 生成临时会话ID，确保功能可以继续使用
@@ -471,7 +576,6 @@ const initQuestions = async () => {
         // 根据目标部分设置已完成部分
         if (targetPart === 4) {
           completedParts.value = [1, 2, 3]
-          isFirst20Submitted.value = true
         } else if (targetPart === 3) {
           completedParts.value = [1, 2]
         } else if (targetPart === 2) {
@@ -767,6 +871,11 @@ const saveAnswer = async () => {
   const q = currentQuestion.value
   if (!q || !sessionId.value) return
 
+  // 确保使用当前URL中的sessionId
+  const currentUrl = new URL(window.location.href);
+  const urlSessionId = currentUrl.searchParams.get('sessionId');
+  const effectiveSessionId = urlSessionId || sessionId.value;
+
   // 构建答案对象
   let answerData
   if (q.type === 'single' || q.type === 'image-single') {
@@ -788,7 +897,7 @@ const saveAnswer = async () => {
   
   // 保存到后端
   try {
-    await saveUserAnswer(sessionId.value, q.id, answerData)
+    await saveUserAnswer(effectiveSessionId, q.id, answerData)
   } catch (err) {
     console.error('保存答案到后端失败:', err)
     // 这里可以选择是否提示用户保存失败
@@ -819,57 +928,37 @@ const nextQuestion = async () => {
         completedParts.value.push(currentPart.value)
       }
       
+      // 确保使用当前URL中的sessionId
+      const currentUrl = new URL(window.location.href);
+      const urlSessionId = currentUrl.searchParams.get('sessionId');
+      const effectiveSessionId = urlSessionId || sessionId.value;
+      
+      // 提交当前部分，更新后端的current_part
+      try {
+        await submitPart(effectiveSessionId, currentPart.value, answers.value)
+      } catch (err) {
+        console.error('提交部分失败:', err)
+        // 即使提交失败，也继续流程，只是current_part可能不会更新
+      }
+      
       // 检查是否已完成所有部分
       if (completedParts.value.length >= 4) {
         // 完成测验
-        await completeQuizSession(sessionId.value)
+        await completeQuizSession(effectiveSessionId)
         completed.value = true
         emit('complete', getReport())
       } else {
         // 加载下一部分
         let nextPart = currentPart.value + 1
         
-        // 特殊处理第3部分完成后调用香调分析API
+        // 特殊处理第3部分完成后设置默认香调信息
         if (currentPart.value === 3 && nextPart === 4) {
-          try {
-            // 调用香调分析API
-            const fragranceData = await analyzeFragrancePreferences(sessionId.value)
-            console.log('✅ 香调分析结果:', fragranceData)
-            
-            // 保存主香调和次香调信息
-            if (fragranceData.main_fragrance) {
-              currentGroup.value.mainFragrance = fragranceData.main_fragrance;
-            }
-            if (fragranceData.secondary_fragrance) {
-              currentGroup.value.secondaryFragrance = fragranceData.secondary_fragrance;
-            }
-          } catch (error) {
-            console.error('香调分析失败:', error)
-            // 使用默认值
-            currentGroup.value.mainFragrance = "柑橘类";
-            currentGroup.value.secondaryFragrance = "蔬果类";
-          }
+          // 直接设置默认香调信息
+          currentGroup.value.mainFragrance = "柑橘类";
+          currentGroup.value.secondaryFragrance = "蔬果类";
         }
         
-        // 特殊处理第4部分（香调图片题目）
-        if (nextPart === 4 && !isFirst20Submitted.value) {
-          // 如果是第4部分且尚未提交前20题答案，需要先提交
-          const first20Answers = {}
-          if (visibleQuestions.value) {
-            for (let i = 0; i < 20; i++) {
-              if (i < visibleQuestions.value.length) {
-                const questionId = visibleQuestions.value[i].id
-                if (answers.value[questionId] !== undefined) {
-                  first20Answers[questionId] = answers.value[questionId]
-                }
-              }
-            }
-          }
-          
-          // 调用API提交前20题答案
-          await submitFirst20Questions(sessionId.value, first20Answers)
-          isFirst20Submitted.value = true
-        }
+        
         
         // 跳过已加载的部分
         while (nextPart <= 4 && completedParts.value.includes(nextPart)) {
@@ -879,7 +968,8 @@ const nextQuestion = async () => {
         if (nextPart <= 4) {
           // 加载下一部分题目
           currentPart.value = nextPart
-          const response = await getPhasedQuestions(nextPart, sessionId.value)
+          // 确保使用当前URL中的sessionId
+          const response = await getPhasedQuestions(nextPart, effectiveSessionId)
           const groupData = response.data
           
           // 构建题目序列
@@ -976,13 +1066,18 @@ const handleSubmit = async () => {
     return
   }
   
+  // 确保使用当前URL中的sessionId
+  const currentUrl = new URL(window.location.href);
+  const urlSessionId = currentUrl.searchParams.get('sessionId');
+  const effectiveSessionId = urlSessionId || sessionId.value;
+  
   const report = getReport()
   console.log('📝 提交报告:', report)
   
   try {
     // 确保测验已经完成
-    if (!completed.value && sessionId.value) {
-      await completeQuizSession(sessionId.value)
+    if (!completed.value && effectiveSessionId) {
+      await completeQuizSession(effectiveSessionId)
     }
     alert('感谢参与！你的专属香氛报告已生成并保存。')
   } catch (err) {
@@ -991,15 +1086,23 @@ const handleSubmit = async () => {
   }
 }
 
-const handleRestart = async () => {
-  emit('restart')
+const handleRestart = () => {
+  // 跳转到带有new=true参数的URL，强制创建新会话
+  const router = useRouter()
+  router.push({
+    path: '/quiz/question',
+    query: { new: 'true' }
+  })
 }
 
-const reset = () => {
+const reset = (forceNew = false) => {
   answers.value = {}
   completed.value = false
   startTime.value = Date.now()
-  sessionId.value = ''
+  // 确保使用当前URL中的sessionId
+  const currentUrl = new URL(window.location.href);
+  const urlSessionId = currentUrl.searchParams.get('sessionId');
+  sessionId.value = urlSessionId || ''
   currentVisibleIndex.value = 0
   tempAnswer.value = ''
   tempMultiAnswer.value = []
@@ -1007,27 +1110,37 @@ const reset = () => {
   error.value = ''
   currentPart.value = 1 // 重置为第一部分
   completedParts.value = [] // 清空已完成部分列表
-  isFirst20Submitted.value = false
-  initQuestions()
+  initQuestions(forceNew)
 }
 
 defineExpose({
   reset
 })
 
-const getReport = () => ({
-  id: sessionId.value || 'AROMA_' + Date.now(),
-  startTime: new Date(startTime.value).toISOString(),
-  endTime: new Date().toISOString(),
-  durationMs: Date.now() - startTime.value,
-  answers: {...answers.value},
-  completedAt: new Date().toLocaleString(),
-  // 如果是继续的会话，包含原始开始时间
-  originalStartTime: loadedSessionData.value?.start_time || null
-})
+const getReport = () => {
+  // 确保使用当前URL中的sessionId
+  const currentUrl = new URL(window.location.href);
+  const urlSessionId = currentUrl.searchParams.get('sessionId');
+  const effectiveSessionId = urlSessionId || sessionId.value;
+  
+  return {
+    id: effectiveSessionId || 'AROMA_' + Date.now(),
+    startTime: new Date(startTime.value).toISOString(),
+    endTime: new Date().toISOString(),
+    durationMs: Date.now() - startTime.value,
+    answers: {...answers.value},
+    completedAt: new Date().toLocaleString(),
+    // 如果是继续的会话，包含原始开始时间
+    originalStartTime: loadedSessionData.value?.start_time || null
+  }
+}
 
 // 方法定义
 const shuffleImages = (question) => {
+  // 确保使用当前URL中的sessionId
+  const currentUrl = new URL(window.location.href);
+  const urlSessionId = currentUrl.searchParams.get('sessionId');
+  
   if (!question || !currentGroup.value || !currentGroup.value.imageRange) return
 
   const {start, end} = currentGroup.value.imageRange;
@@ -1051,6 +1164,10 @@ const shuffleImages = (question) => {
 // 新增函数：处理第四部分图片选项
 const shuffleFragranceImages = async (question) => {
   if (!question || question.id !== 'q4') return;
+  
+  // 确保使用当前URL中的sessionId
+  const currentUrl = new URL(window.location.href);
+  const urlSessionId = currentUrl.searchParams.get('sessionId');
   
   // 获取主香调和次香调，不设置默认值，完全按照后端返回的信息
   const mainFragrance = currentGroup.value.mainFragrance;
@@ -1087,11 +1204,11 @@ const shuffleFragranceImages = async (question) => {
     if (mainImages.length === 0 || secondaryImages.length === 0) {
       console.warn('⚠️ 后端未提供图片数据，尝试从API获取');
       if (mainImages.length === 0) {
-        const mainResponse = await getFragranceImages(mainFragrance);
+        const mainResponse = await getFragranceImages(mainFragrance, urlSessionId);
         mainImages = mainResponse.images || [];
       }
       if (secondaryImages.length === 0) {
-        const secondaryResponse = await getFragranceImages(secondaryFragrance);
+        const secondaryResponse = await getFragranceImages(secondaryFragrance, urlSessionId);
         secondaryImages = secondaryResponse.images || [];
       }
     }
@@ -1141,8 +1258,11 @@ const refreshFragranceImages = async () => {
 };
 
 // 获取指定类别的随机图片
-// 获取指定类别的随机图片
 const getRandomImagesForCategory = (category, count) => {
+  // 确保使用当前URL中的sessionId
+  const currentUrl = new URL(window.location.href);
+  const urlSessionId = currentUrl.searchParams.get('sessionId');
+  
   const images = [];
   const basePath = `/images/smell/${category}/`;
   
@@ -1166,9 +1286,12 @@ const getRandomImagesForCategory = (category, count) => {
 };
 
 // 监听当前问题变化
-// 监听当前问题变化
 watch(currentQuestion, async (newVal) => {
   if (newVal && newVal.type === 'image-single' && newVal.options && newVal.options.length === 0) {
+    // 确保使用当前URL中的sessionId
+    const currentUrl = new URL(window.location.href);
+    const urlSessionId = currentUrl.searchParams.get('sessionId');
+    
     shuffleImages(newVal); // 当切换到新问题时自动加载一组图片
   }
   

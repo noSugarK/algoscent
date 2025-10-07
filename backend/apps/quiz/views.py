@@ -22,7 +22,8 @@ from .serializers import (
     UserQuizSessionCreateSerializer,
     UserAnswerCreateSerializer,
     UserQuizSessionCompleteSerializer,
-    UserQuizHistorySerializer
+    UserQuizHistorySerializer,
+    SubmitPartSerializer
 )
 import json
 
@@ -255,66 +256,7 @@ class UserQuizSessionViewSet(
         serializer = self.get_serializer(sessions, many=True)
         return Response(serializer.data)
     
-    @action(detail=True, methods=['post'], url_path='submit-first-20')
-    def submit_first_20(self, request, session_id=None):
-        """提交前20道题的答案"""
-        try:
-            instance = self.get_object()
-            if instance.status != 'in_progress':
-                return Response(
-                    {'detail': '该会话已结束，无法提交答案。'},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-            
-            # 获取提交的答案
-            answers = request.data.get('answers', {})
-            if not answers:
-                return Response(
-                    {'detail': '答案不能为空。'},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-            
-            # 保存答案
-            for question_id, answer in answers.items():
-                try:
-                    question = QuizQuestion.objects.get(id=question_id)
-                    # 将答案转为JSON字符串存储
-                    if isinstance(answer, (list, dict)):
-                        answer = json.dumps(answer)
-                    
-                    UserAnswer.objects.update_or_create(
-                        session=instance,
-                        question=question,
-                        defaults={
-                            'value': answer,
-                            'part': 1  # 前20道题属于第一部分
-                        }
-                    )
-                except QuizQuestion.DoesNotExist:
-                    continue  # 跳过不存在的题目
-            
-            # 分析用户答案，确定主香调和次香调
-            fragrance_analysis = self._analyze_user_answers_for_fragrance(instance)
-            
-            # 更新会话状态，标记为已完成第一部分
-            instance.current_part = 2
-            instance.main_fragrance = fragrance_analysis.get('main_fragrance')
-            instance.secondary_fragrance = fragrance_analysis.get('secondary_fragrance')
-            instance.save()
-            
-            return Response({
-                'detail': '前20道题答案提交成功。',
-                'session_id': instance.session_id,
-                'current_part': instance.current_part,
-                'main_fragrance': instance.main_fragrance,
-                'secondary_fragrance': instance.secondary_fragrance
-            }, status=status.HTTP_200_OK)
-            
-        except Exception as e:
-            return Response(
-                {'detail': f'提交答案失败：{str(e)}'},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
+    
     
     @action(detail=True, methods=['get'], url_path='report')
     def report(self, request, session_id=None):
@@ -439,134 +381,16 @@ class UserQuizSessionViewSet(
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
     
-    def _analyze_user_answers_for_fragrance(self, session):
-        """
-        分析用户答案，确定主香调和次香调
-        """
-        # 获取用户的所有答案
-        user_answers = UserAnswer.objects.filter(session=session, part=1)
-        
-        # 初始化香调计数器
-        fragrance_counts = {
-            '柑橘类': 0,
-            '花卉类': 0,
-            '木质类': 0,
-            '东方类': 0,
-            '西普类': 0,
-            '皮革类': 0,
-            '馥奇类': 0,
-            '绿叶类': 0,
-            '水生类': 0,
-            '美食类': 0,
-            '蔬果类': 0,
-            '其他': 0
-        }
-        
-        # 根据用户答案增加相应香调的计数
-        for answer in user_answers:
-            try:
-                # 解析答案值
-                answer_value = answer.value
-                if isinstance(answer_value, str):
-                    try:
-                        # 尝试解析JSON
-                        parsed_value = json.loads(answer_value)
-                        if isinstance(parsed_value, (list, dict)):
-                            answer_value = parsed_value
-                    except json.JSONDecodeError:
-                        # 不是JSON，保持原值
-                        pass
-                
-                # 根据题目ID和答案值增加香调计数
-                question_id = answer.question.id
-                if question_id.startswith('q1'):
-                    # 第一部分题目，根据答案值确定香调偏好
-                    if isinstance(answer_value, list):
-                        # 多选题
-                        for value in answer_value:
-                            self._update_fragrance_count(fragrance_counts, value)
-                    else:
-                        # 单选题
-                        self._update_fragrance_count(fragrance_counts, answer_value)
-                elif question_id.startswith('q2'):
-                    # 第二部分题目，根据答案值确定香调偏好
-                    if isinstance(answer_value, list):
-                        # 多选题
-                        for value in answer_value:
-                            self._update_fragrance_count(fragrance_counts, value)
-                    else:
-                        # 单选题
-                        self._update_fragrance_count(fragrance_counts, answer_value)
-                elif question_id.startswith('q3'):
-                    # 第三部分题目，根据答案值确定香调偏好
-                    if isinstance(answer_value, list):
-                        # 多选题
-                        for value in answer_value:
-                            self._update_fragrance_count(fragrance_counts, value)
-                    else:
-                        # 单选题
-                        self._update_fragrance_count(fragrance_counts, answer_value)
-            except Exception as e:
-                print(f"处理答案时出错: {e}")
-                continue
-        
-        # 找出计数最高的两个香调
-        sorted_fragrances = sorted(fragrance_counts.items(), key=lambda x: x[1], reverse=True)
-        
-        # 确保至少有两个香调
-        if len(sorted_fragrances) >= 2:
-            main_fragrance = sorted_fragrances[0][0]
-            secondary_fragrance = sorted_fragrances[1][0]
-        elif len(sorted_fragrances) == 1:
-            main_fragrance = sorted_fragrances[0][0]
-            secondary_fragrance = '花卉类'  # 默认次香调
-        else:
-            main_fragrance = '柑橘类'  # 默认主香调
-            secondary_fragrance = '花卉类'  # 默认次香调
-        
-        return {
-            'main_fragrance': main_fragrance,
-            'secondary_fragrance': secondary_fragrance
-        }
+    
 
-    def _update_fragrance_count(self, fragrance_counts, answer_value):
-        """
-        根据答案值更新香调计数
-        """
-        # 将答案值转换为字符串
-        answer_str = str(answer_value).lower()
-        
-        # 根据答案值的关键词增加相应香调的计数
-        if '柑橘' in answer_str or '柠檬' in answer_str or '橙' in answer_str or '柚' in answer_str:
-            fragrance_counts['柑橘类'] += 1
-        elif '花' in answer_str or '玫瑰' in answer_str or '茉莉' in answer_str or '薰衣草' in answer_str:
-            fragrance_counts['花卉类'] += 1
-        elif '木' in answer_str or '檀香' in answer_str or '雪松' in answer_str or '橡木' in answer_str:
-            fragrance_counts['木质类'] += 1
-        elif '东' in answer_str or '香料' in answer_str or '麝香' in answer_str or '香草' in answer_str:
-            fragrance_counts['东方类'] += 1
-        elif '西普' in answer_str or '苔藓' in answer_str or '橡树' in answer_str:
-            fragrance_counts['西普类'] += 1
-        elif '皮' in answer_str or '烟草' in answer_str or '烟' in answer_str:
-            fragrance_counts['皮革类'] += 1
-        elif '馥奇' in answer_str or '草' in answer_str or '树' in answer_str:
-            fragrance_counts['馥奇类'] += 1
-        elif '绿' in answer_str or '叶' in answer_str or '茶' in answer_str:
-            fragrance_counts['绿叶类'] += 1
-        elif '水' in answer_str or '海' in answer_str or '雨' in answer_str:
-            fragrance_counts['水生类'] += 1
-        elif '食' in answer_str or '甜' in answer_str or '巧' in answer_str or '奶' in answer_str:
-            fragrance_counts['美食类'] += 1
-        elif '果' in answer_str or '蔬' in answer_str or '苹果' in answer_str or '梨' in answer_str:
-            fragrance_counts['蔬果类'] += 1
-        else:
-            fragrance_counts['其他'] += 1
 
-    @action(detail=True, methods=['post'], url_path='submit-part/(?P<current_part>[0-9]+)')
+
+    @action(detail=True, methods=['post'], url_path='submit-part')
     def submit_part(self, request, session_id=None, current_part=None):
         """提交当前阶段，进入下一阶段"""
         try:
-            current_part = int(current_part)
+            # 从URL参数中获取current_part
+            current_part = int(request.data.get('current_part', 1))
             if current_part < 1 or current_part > 4:
                 return Response(
                     {"code": 400, "msg": "部分参数无效，必须是1-4之间的整数"},
@@ -614,8 +438,7 @@ class UserQuizSessionViewSet(
                         session=instance,
                         question=question,
                         defaults={
-                            'value': answer,
-                            'part': current_part
+                            'value': answer
                         }
                     )
                 except QuizQuestion.DoesNotExist:
@@ -624,10 +447,28 @@ class UserQuizSessionViewSet(
             # 如果当前是Part3，生成Part4的题目
             if current_part == 3:
                 part4_questions = self._generate_part4_questions(instance)
+                # 序列化题目数据
+                serializer = QuizQuestionSerializer(part4_questions, many=True)
+                
+                # 为动态生成的选项添加特殊处理
+                for i, question_data in enumerate(serializer.data):
+                    question = part4_questions[i]
+                    if hasattr(question, '_dynamic_options'):
+                        # 序列化动态选项
+                        dynamic_options = []
+                        for option in question._dynamic_options:
+                            option_data = {
+                                'label': option.label,
+                                'value': option.value,
+                                'image': option.image
+                            }
+                            dynamic_options.append(option_data)
+                        question_data['options'] = dynamic_options
+                
                 return Response({
                     "code": 200,
                     "msg": "Part3提交成功，已生成Part4题目",
-                    "data": part4_questions
+                    "data": serializer.data
                 })
             
             # 如果是Part4，标记会话为已完成
@@ -669,14 +510,31 @@ class UserQuizSessionViewSet(
         返回一个包含动态生成选项的题目列表
         """
         
-        # 调用AI接口获取主香调和次香调
-        fragrance_result = self._generate_fragrance_combinations()
+        # 从数据库中重新查询会话，确保获取最新的香调信息
+        from .models import UserQuizSession
+        db_session = UserQuizSession.objects.get(session_id=session.session_id)
         
-        # 保存香调结果到会话中，以便下次使用
-        session.main_fragrance = fragrance_result['main_fragrance']
-        session.secondary_fragrance = fragrance_result['secondary_fragrance']
-        # print(fragrance_result)
-        session.save()
+        # 检查数据库中的主次香调是否为空
+        if db_session.main_fragrance and db_session.secondary_fragrance:
+            # 使用数据库中的香调信息
+            fragrance_result = {
+                'main_fragrance': db_session.main_fragrance,
+                'secondary_fragrance': db_session.secondary_fragrance,
+                'main_images': [],
+                'secondary_images': []
+            }
+        else:
+            # 调用AI接口获取主香调和次香调
+            fragrance_result = self._generate_fragrance_combinations()
+            
+            # 保存香调结果到数据库中，以便下次使用
+            db_session.main_fragrance = fragrance_result['main_fragrance']
+            db_session.secondary_fragrance = fragrance_result['secondary_fragrance']
+            db_session.save()
+            
+            # 同时更新当前会话对象的香调信息
+            session.main_fragrance = fragrance_result['main_fragrance']
+            session.secondary_fragrance = fragrance_result['secondary_fragrance']
         
         # 获取Part4题目组
         try:
@@ -700,7 +558,7 @@ class UserQuizSessionViewSet(
                     main_option = DynamicOption(
                         label=fragrance_result['main_fragrance'],
                         value=fragrance_result['main_fragrance'],
-                        image=f"{question.images_path}{fragrance_result['main_fragrance']}.png"
+                        image=f"{question.images_path}{fragrance_result['main_fragrance']}.png" if fragrance_result['main_fragrance'] else ""
                     )
                     question._dynamic_options.append(main_option)
                     
@@ -708,7 +566,7 @@ class UserQuizSessionViewSet(
                     secondary_option = DynamicOption(
                         label=fragrance_result['secondary_fragrance'],
                         value=fragrance_result['secondary_fragrance'],
-                        image=f"{question.images_path}{fragrance_result['secondary_fragrance']}.png"
+                        image=f"{question.images_path}{fragrance_result['secondary_fragrance']}.png" if fragrance_result['secondary_fragrance'] else ""
                     )
                     question._dynamic_options.append(secondary_option)
             
@@ -740,11 +598,11 @@ class UserQuizSessionViewSet(
             return result
             
         except Exception as e:
-            # 如果AI接口调用失败，使用默认值
+            # 如果AI接口调用失败，使用空值
             print(f"AI接口调用失败: {e}")
             return {
-                'main_fragrance': '柑橘类',
-                'secondary_fragrance': '花卉类',  # 确保与数据库中的类别完全匹配
+                'main_fragrance': '',
+                'secondary_fragrance': '',  # 确保与数据库中的类别完全匹配
                 'main_images': [],
                 'secondary_images': []
             }
@@ -764,9 +622,9 @@ class UserQuizSessionViewSet(
         
         if not session:
             print("未找到有效的用户会话")
-            # 根据用户偏好确定主香调和次香调
-            main_fragrance = '柑橘类'  # 默认值
-            secondary_fragrance = '花卉类（除白色花卉）'  # 默认值，确保与数据库中的类别完全匹配
+            # 返回空值，等待分析后再设置
+            main_fragrance = ''  # 空值
+            secondary_fragrance = ''  # 空值
             
             return {
                 '主香调': main_fragrance,
@@ -775,8 +633,7 @@ class UserQuizSessionViewSet(
         
         # 获取用户前三个部分的答案
         user_answers = UserAnswer.objects.filter(
-            session=session,
-            part__in=[1, 2, 3]
+            session=session
         ).select_related('question').prefetch_related('question__options')
         
         # 构建问题和答案的字典对
@@ -918,6 +775,8 @@ def get_phased_questions(request):
     - part: 题目部分 (1-4)
     - session_id: 会话ID (Part4必需)
     """
+    from .models import UserQuizSession
+    
     part = request.query_params.get('part')
     session_id = request.query_params.get('session_id')
     
@@ -976,13 +835,16 @@ def get_phased_questions(request):
                     question_data['options'] = dynamic_options
             
             # 构建返回数据，与其他部分格式保持一致
+            # 从数据库中重新查询会话，确保获取最新的香调信息
+            db_session = UserQuizSession.objects.get(session_id=session.session_id)
+            
             return_data = {
                 'id': group.id,
                 'title': group.title,
                 'description': group.description,
                 'questions': serializer.data,
-                'mainFragrance': session.main_fragrance or '柑橘类',
-                'secondaryFragrance': session.secondary_fragrance or '蔬果类'
+                'mainFragrance': db_session.main_fragrance,
+                'secondaryFragrance': db_session.secondary_fragrance
             }
             
             return Response({
@@ -1068,13 +930,6 @@ def extend_text_with_ai(request):
             {'detail': f'AI扩写失败，请稍后重试。错误信息：{str(e)}'},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
-
-# 用于分析用户答题记录并返回主香调和次香调的视图
-@api_view(['POST'])
-@permission_classes([IsAuthenticated])
-def analyze_fragrance_preferences(request):
-    """分析用户答题记录，返回主香调和次香调"""
-    pass
 
 def _get_fragrance_images(category_type):
     """
