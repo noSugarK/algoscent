@@ -159,17 +159,17 @@
                     <template v-else-if="answer.question_type === 'single-with-text'">
                       <!-- 单选填空题，显示选择和填空内容 -->
                       <div class="flex items-start">
-                        <span>{{ answer.option_label || (typeof answer.value === 'object' ? answer.value.value : answer.value) }}</span>
-                        <template v-if="(typeof answer.value === 'object' && answer.value.text && answer.value.text.trim()) || (answer.text && answer.text.trim())">
+                        <span>{{ answer.option_label || '无选择' }}</span>
+                        <template v-if="answer.text && answer.text.trim()">
                           <span class="ml-2 px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded text-xs">
-                            填空：{{ (typeof answer.value === 'object' && answer.value.text) || answer.text }}
+                            填空：{{ answer.text }}
                           </span>
                         </template>
                       </div>
                     </template>
                     <template v-else-if="answer.question_type === 'text'">
                       <!-- 文本题 -->
-                      <div>{{ answer.text || answer.value || '无回答' }}</div>
+                      <div>{{ answer.text || '无回答' }}</div>
                     </template>
                     <template v-else>
                       <!-- 其他题型，使用默认显示 -->
@@ -334,7 +334,10 @@ const loadReport = async () => {
         let optionLabels = null
         let textValue = null
         
-        if (answer.question_type === 'single' || answer.question_type === 'single-with-text') {
+        // 优先使用后端提供的选项文本
+        if (answer.option_label) {
+          optionLabel = answer.option_label
+        } else if (answer.question_type === 'single' || answer.question_type === 'single-with-text') {
           // 单选题，提取选项标签
           if (typeof parsedValue === 'object' && parsedValue.value) {
             optionLabel = parsedValue.value
@@ -342,6 +345,11 @@ const loadReport = async () => {
           } else if (typeof parsedValue === 'string') {
             optionLabel = parsedValue
           }
+        }
+        
+        // 优先使用后端提供的选项文本数组
+        if (answer.option_labels) {
+          optionLabels = answer.option_labels
         } else if (answer.question_type === 'multiple' || answer.question_type === 'image-multiple') {
           // 多选题，提取选项标签数组
           if (Array.isArray(parsedValue)) {

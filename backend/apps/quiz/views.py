@@ -360,29 +360,39 @@ class UserQuizSessionViewSet(
                         # 根据问题类型处理答案
                         if question_type == 'multiple' and isinstance(answer_value, list):
                             # 多选题
-                            for option_id in answer_value:
+                            for option_value in answer_value:
                                 try:
-                                    option = QuizQuestionOption.objects.get(id=option_id)
+                                    # 根据选项值获取选项标签
+                                    option = QuizQuestionOption.objects.get(
+                                        question=question,
+                                        value=option_value
+                                    )
                                     option_labels.append(option.label)
                                 except QuizQuestionOption.DoesNotExist:
-                                    option_labels.append(f"选项 {option_id}")
+                                    # 如果找不到选项，使用选项值作为标签
+                                    option_labels.append(f"选项 {option_value}")
                         elif question_type in ['single', 'single-with-text'] and isinstance(answer_value, (str, int, dict)):
                             # 单选题或单选填空题
-                            option_id = None
+                            option_value = None
                             text_value = None
                             
                             if isinstance(answer_value, dict):
-                                option_id = answer_value.get('value')
+                                option_value = answer_value.get('value')
                                 text_value = answer_value.get('text')
                             else:
-                                option_id = answer_value
+                                option_value = answer_value
                             
-                            if option_id:
+                            if option_value:
                                 try:
-                                    option = QuizQuestionOption.objects.get(id=option_id)
+                                    # 根据选项值获取选项标签
+                                    option = QuizQuestionOption.objects.get(
+                                        question=question,
+                                        value=option_value
+                                    )
                                     option_label = option.label
                                 except QuizQuestionOption.DoesNotExist:
-                                    option_label = f"选项 {option_id}"
+                                    # 如果找不到选项，使用选项值作为标签
+                                    option_label = f"选项 {option_value}"
                     except Exception as e:
                         print(f"处理选项信息时出错: {str(e)}")
                 
