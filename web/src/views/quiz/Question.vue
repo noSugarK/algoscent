@@ -271,8 +271,102 @@ const initQuestions = async (forceNew = false) => {
         // 更新可见题目列表
         updateVisibleQuestions()
         
-        // 重置到第一题
-        currentVisibleIndex.value = 0
+        // 如果会话数据，尝试找到最后回答的题目位置
+        if (Object.keys(answers.value).length > 0) {
+          // 找到最后回答的题目
+          let answeredQuestions = Object.keys(answers.value)
+          console.log('已回答的题目ID:', answeredQuestions)
+          
+          // 获取最后一个回答的题目ID
+          const lastAnsweredQuestionId = answeredQuestions[answeredQuestions.length - 1]
+          console.log('最后回答的题目ID:', lastAnsweredQuestionId)
+          
+          // 找到最后回答的题目在当前部分可见题目中的索引
+          let lastAnsweredIndex = visibleQuestions.value.findIndex(q => q.id === lastAnsweredQuestionId)
+          console.log('最后回答的题目在可见题目中的索引:', lastAnsweredIndex)
+          
+          // 如果找不到匹配的题目ID，检查是否是特殊格式（如"q3"、"q4"）
+          if (lastAnsweredIndex === -1 && (lastAnsweredQuestionId === 'q3' || lastAnsweredQuestionId === 'q4')) {
+            console.log(`⚠️ 未找到题目ID ${lastAnsweredQuestionId}，可能是特殊格式，尝试查找匹配的题目`)
+            
+            // 对于"q3"，查找第3部分的第一个题目
+            if (lastAnsweredQuestionId === 'q3' && currentPart.value === 3) {
+              // 查找第3部分的第一个题目
+              const part3Question = visibleQuestions.value.find(q => q.id.startsWith('q3-'))
+              if (part3Question) {
+                lastAnsweredIndex = visibleQuestions.value.findIndex(q => q.id === part3Question.id)
+                console.log(`✅ 找到第3部分的第一个题目: ${part3Question.id}，索引: ${lastAnsweredIndex}`)
+              }
+            }
+            
+            // 对于"q4"，查找第4部分的第一个题目
+            if (lastAnsweredQuestionId === 'q4' && currentPart.value === 4) {
+              // 查找第4部分的第一个题目
+              const part4Question = visibleQuestions.value.find(q => q.id.startsWith('q4-'))
+              if (part4Question) {
+                lastAnsweredIndex = visibleQuestions.value.findIndex(q => q.id === part4Question.id)
+                console.log(`✅ 找到第4部分的第一个题目: ${part4Question.id}，索引: ${lastAnsweredIndex}`)
+              }
+            }
+          }
+          
+          // 如果仍然找不到匹配的题目，尝试使用部分编号和题目编号来匹配
+          if (lastAnsweredIndex === -1) {
+            console.log(`⚠️ 仍然未找到题目ID ${lastAnsweredQuestionId}，尝试使用部分编号和题目编号匹配`)
+            
+            // 提取部分编号和题目编号
+            const partMatch = lastAnsweredQuestionId.match(/q(\d+)-?(\d*)/)
+            if (partMatch) {
+              const partNum = parseInt(partMatch[1])
+              const questionNum = partMatch[2] ? parseInt(partMatch[2]) : 1
+              
+              console.log(`提取部分编号: ${partNum}, 题目编号: ${questionNum}`)
+              
+              // 如果部分编号匹配当前部分，尝试找到对应题目
+              if (partNum === targetPart) {
+                // 查找匹配的题目
+                const targetQuestion = visibleQuestions.value.find(q => {
+                  const qMatch = q.id.match(/q(\d+)-?(\d*)/)
+                  if (qMatch) {
+                    const qPartNum = parseInt(qMatch[1])
+                    const qQuestionNum = qMatch[2] ? parseInt(qMatch[2]) : 1
+                    return qPartNum === partNum && qQuestionNum === questionNum
+                  }
+                  return false
+                })
+                
+                if (targetQuestion) {
+                  lastAnsweredIndex = visibleQuestions.value.findIndex(q => q.id === targetQuestion.id)
+                  console.log(`✅ 通过部分和题目编号找到匹配题目: ${targetQuestion.id}，索引: ${lastAnsweredIndex}`)
+                }
+              }
+            }
+          }
+          
+          if (lastAnsweredIndex !== -1) {
+            // 如果找到已回答的题目，检查是否是当前部分的最后一题
+            if (lastAnsweredIndex === visibleQuestions.value.length - 1) {
+              // 如果是最后一题，保持在这个位置
+              currentVisibleIndex.value = lastAnsweredIndex
+              console.log('✅ 定位到当前部分最后一题:', currentVisibleIndex.value + 1)
+            } else {
+              // 如果不是最后一题，跳转到下一题
+              currentVisibleIndex.value = lastAnsweredIndex + 1
+              console.log('✅ 定位到未完成题目位置:', currentVisibleIndex.value + 1)
+            }
+            // 确保加载对应的题目状态
+            setTimeout(() => loadCurrentQuestionState(), 100)
+          } else {
+            // 如果在当前部分没有找到最后回答的题目，可能是因为题目ID格式不匹配
+            // 这种情况下，我们跳转到当前部分的第一题
+            currentVisibleIndex.value = 0
+            console.log('⚠️ 未在当前部分找到最后回答的题目，跳转到第一题')
+          }
+        } else {
+          // 如果没有已回答的题目，跳转到第一题
+          currentVisibleIndex.value = 0
+          console.log('📝 没有已回答的题目，跳转到第一题')
+        }
         
         return
       } catch (err) {
@@ -642,6 +736,39 @@ const initQuestions = async (forceNew = false) => {
         }
       }
       
+      // 如果仍然找不到匹配的题目，尝试使用部分编号和题目编号来匹配
+      if (lastAnsweredIndex === -1) {
+        console.log(`⚠️ 仍然未找到题目ID ${lastAnsweredQuestionId}，尝试使用部分编号和题目编号匹配`)
+        
+        // 提取部分编号和题目编号
+        const partMatch = lastAnsweredQuestionId.match(/q(\d+)-?(\d*)/)
+        if (partMatch) {
+          const partNum = parseInt(partMatch[1])
+          const questionNum = partMatch[2] ? parseInt(partMatch[2]) : 1
+          
+          console.log(`提取部分编号: ${partNum}, 题目编号: ${questionNum}`)
+          
+          // 如果部分编号匹配当前部分，尝试找到对应题目
+          if (partNum === targetPart) {
+            // 查找匹配的题目
+            const targetQuestion = visibleQuestions.value.find(q => {
+              const qMatch = q.id.match(/q(\d+)-?(\d*)/)
+              if (qMatch) {
+                const qPartNum = parseInt(qMatch[1])
+                const qQuestionNum = qMatch[2] ? parseInt(qMatch[2]) : 1
+                return qPartNum === partNum && qQuestionNum === questionNum
+              }
+              return false
+            })
+            
+            if (targetQuestion) {
+              lastAnsweredIndex = visibleQuestions.value.findIndex(q => q.id === targetQuestion.id)
+              console.log(`✅ 通过部分和题目编号找到匹配题目: ${targetQuestion.id}，索引: ${lastAnsweredIndex}`)
+            }
+          }
+        }
+      }
+      
       if (lastAnsweredIndex !== -1) {
         // 如果找到已回答的题目，检查是否是当前部分的最后一题
         if (lastAnsweredIndex === visibleQuestions.value.length - 1) {
@@ -661,6 +788,10 @@ const initQuestions = async (forceNew = false) => {
         currentVisibleIndex.value = 0
         console.log('⚠️ 未在当前部分找到最后回答的题目，跳转到第一题')
       }
+    } else {
+      // 如果没有已回答的题目，跳转到第一题
+      currentVisibleIndex.value = 0
+      console.log('📝 没有已回答的题目，跳转到第一题')
     }
     
   } catch (err) {
