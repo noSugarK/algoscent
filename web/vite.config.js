@@ -33,10 +33,12 @@ export default defineConfig({
         open: true,
         // 配置代理解决跨域问题
         proxy: {
-            // 将 /v1 开头的请求代理到后端服务器
-            '/v1': {
+            // 将 /api 开头的请求代理到后端服务器
+            '/api': {
                 target: 'http://localhost:8000', // Django后端地址
-                changeOrigin: true
+                changeOrigin: true,
+                // 重写路径，去掉 /api 前缀（如果需要的话）
+                rewrite: (path) => path.replace(/^\/api/, '')
             }
         }
     }
