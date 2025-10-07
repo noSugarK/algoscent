@@ -5,6 +5,8 @@ from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from django.utils.crypto import get_random_string
+
+from backend import settings
 from .models import (
     QuizQuestionGroup,
     QuizQuestion,
@@ -296,8 +298,8 @@ class UserQuizSessionViewSet(
             
             # 更新会话状态，标记为已完成第一部分
             instance.current_part = 2
-            instance.main_fragrance = fragrance_analysis.get('main_fragrance', '柑橘类')
-            instance.secondary_fragrance = fragrance_analysis.get('secondary_fragrance', '花卉类')
+            instance.main_fragrance = fragrance_analysis.get('main_fragrance')
+            instance.secondary_fragrance = fragrance_analysis.get('secondary_fragrance')
             instance.save()
             
             return Response({
@@ -666,22 +668,14 @@ class UserQuizSessionViewSet(
         根据用户前三个部分的回答生成个性化的Part4题目
         返回一个包含动态生成选项的题目列表
         """
-        # 获取用户前三个部分的答案
-        user_answers = UserAnswer.objects.filter(
-            session=session,
-            part__in=[1, 2, 3]
-        )
-        
-        # 分析用户的香调偏好
-        fragrance_profile = self._analyze_fragrance_profile(user_answers)
         
         # 调用AI接口获取主香调和次香调
-        fragrance_result = self._generate_fragrance_combinations(fragrance_profile)
+        fragrance_result = self._generate_fragrance_combinations()
         
         # 保存香调结果到会话中，以便下次使用
         session.main_fragrance = fragrance_result['main_fragrance']
         session.secondary_fragrance = fragrance_result['secondary_fragrance']
-        print(fragrance_result)
+        # print(fragrance_result)
         session.save()
         
         # 获取Part4题目组
@@ -721,57 +715,19 @@ class UserQuizSessionViewSet(
             return questions
         except QuizQuestionGroup.DoesNotExist:
             return []
+
     
-    def _analyze_fragrance_profile(self, user_answers):
-        """
-        分析用户的香调偏好
-        """
-        profile = {
-            'personality': {},  # 性格特点
-            'sensitivity': {},   # 感官敏感度
-            'relaxation': {},   # 放松场景
-            'preferences': {}   # 香调偏好
-        }
-        
-        for answer in user_answers:
-            question_id = answer.question.id
-            value = json.loads(answer.value) if answer.value else None
-            
-            if question_id.startswith('q1_'):  # Part1: 情景选择
-                if question_id == 'q1_1':  # 性格特点
-                    profile['personality'][value] = profile['personality'].get(value, 0) + 1
-                elif question_id == 'q1_2':  # 放松场景
-                    profile['relaxation'][value] = profile['relaxation'].get(value, 0) + 1
-                    
-            elif question_id.startswith('q2_'):  # Part2: 感官敏感度
-                profile['sensitivity'][question_id] = value
-                
-            elif question_id.startswith('q3_'):  # Part3: 填空题
-                # 分析填空题中的关键词
-                if answer.text:
-                    text = answer.text.lower()
-                    if '花' in text or 'floral' in text:
-                        profile['preferences']['floral'] = profile['preferences'].get('floral', 0) + 1
-                    if '木' in text or 'woody' in text:
-                        profile['preferences']['woody'] = profile['preferences'].get('woody', 0) + 1
-                    if '柑' in text or 'citrus' in text:
-                        profile['preferences']['citrus'] = profile['preferences'].get('citrus', 0) + 1
-                    if '东' in text or 'oriental' in text:
-                        profile['preferences']['oriental'] = profile['preferences'].get('oriental', 0) + 1
-        
-        return profile
-    
-    def _generate_fragrance_combinations(self, profile):
+    def _generate_fragrance_combinations(self):
         """
         调用AI接口分析用户答题记录，返回主香调和次香调
         """
         # 调用AI接口分析用户答题记录
         try:
-            ai_result = self._call_fragrance_ai(profile)
-            
+            ai_result = self._call_fragrance_ai()
+            # print(ai_result)
             # 解析AI返回的结果
-            main_fragrance = ai_result.get('主香调', '柑橘类')  # 默认值
-            secondary_fragrance = ai_result.get('次香调', '花卉类')  # 默认值
+            main_fragrance = ai_result.get('主香调')  # 默认值
+            secondary_fragrance = ai_result.get('次香调')  # 默认值
             
             # 构建返回结果
             result = {
@@ -788,31 +744,121 @@ class UserQuizSessionViewSet(
             print(f"AI接口调用失败: {e}")
             return {
                 'main_fragrance': '柑橘类',
-                'secondary_fragrance': '花卉类',
+                'secondary_fragrance': '花卉类',  # 确保与数据库中的类别完全匹配
                 'main_images': [],
                 'secondary_images': []
             }
     
-    def _call_fragrance_ai(self, profile):
+    def _call_fragrance_ai(self):
         """
         调用AI接口分析用户答题记录，返回主香调和次香调
         这里是一个模拟实现，实际应用中需要替换为真实的AI接口调用
         """
-        # 这里应该是调用真实AI接口的代码
-        # 为了演示，我们返回一个模拟的结果
+        # print("正在调用AI接口...")
         
-        # 模拟AI分析逻辑
-        preferences = profile.get('preferences', {})
+        # 获取用户会话
+        session = UserQuizSession.objects.filter(
+            user=self.request.user,
+            status='in_progress'
+        ).first()
         
-        # 根据用户偏好确定主香调和次香调
-        main_fragrance = '柑橘类'  # 默认值
+        if not session:
+            print("未找到有效的用户会话")
+            # 根据用户偏好确定主香调和次香调
+            main_fragrance = '柑橘类'  # 默认值
+            secondary_fragrance = '花卉类（除白色花卉）'  # 默认值，确保与数据库中的类别完全匹配
+            
+            return {
+                '主香调': main_fragrance,
+                '次香调': secondary_fragrance
+            }
         
-        secondary_fragrance = '花卉类'  # 默认值
+        # 获取用户前三个部分的答案
+        user_answers = UserAnswer.objects.filter(
+            session=session,
+            part__in=[1, 2, 3]
+        ).select_related('question').prefetch_related('question__options')
         
-        return {
-            '主香调': main_fragrance,
-            '次香调': secondary_fragrance
-        }
+        # 构建问题和答案的字典对
+        question_answer_dict = {}
+        
+        for answer in user_answers:
+            question = answer.question
+            question_text = question.text
+            
+            # 根据题目类型处理答案
+            if question.type in ['single', 'image-single']:  # 单选题
+                try:
+                    value = json.loads(answer.value) if answer.value else None
+                    # 获取选项文本
+                    if value:
+                        option = question.options.filter(value=value).first()
+                        answer_text = option.label if option else value
+                    else:
+                        answer_text = None
+                except json.JSONDecodeError:
+                    answer_text = answer.value
+                    
+            elif question.type in ['multiple', 'image-multiple']:  # 多选题
+                try:
+                    values = json.loads(answer.value) if answer.value else []
+                    # 获取选项文本列表
+                    answer_texts = []
+                    if values:
+                        for value in values:
+                            option = question.options.filter(value=value).first()
+                            if option:
+                                answer_texts.append(option.label)
+                            else:
+                                answer_texts.append(value)
+                    answer_text = answer_texts
+                except json.JSONDecodeError:
+                    answer_text = answer.value
+                    
+            elif question.type in ['text', 'single-with-text']:  # 填空题或单选加填空
+                answer_text = answer.text if answer.text else answer.value
+                
+            else:  # 其他类型
+                answer_text = answer.value
+            
+            # 添加到字典
+            question_answer_dict[question_text] = answer_text
+        
+        # 限制为前20题
+        if len(question_answer_dict) > 20:
+            # 转换为列表，取前20个，再转回字典
+            items = list(question_answer_dict.items())[:20]
+            question_answer_dict = dict(items)
+        
+        # print("问题和答案字典对:", question_answer_dict)
+
+        from http import HTTPStatus
+        from dashscope import Application
+
+        dashscope_api_key = getattr(settings, 'DASHSCOPE_API_KEY', '')
+        if not dashscope_api_key:
+            return Response(
+                {'detail': '阿里云百炼API密钥未配置。'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+        response = Application.call(
+            # 若没有配置环境变量，可用百炼API Key将下行替换为：api_key="sk-xxx"。但不建议在生产环境中直接将API Key硬编码到代码中，以减少API Key泄露风险。
+            api_key=dashscope_api_key,
+            app_id='6e85e84a55ef4b5ea41b197077a159c6',  # 替换为实际的应用 ID
+            prompt=str(question_answer_dict))
+
+        if response.status_code != HTTPStatus.OK:
+            print(f'request_id={response.request_id}')
+            print(f'code={response.status_code}')
+            print(f'message={response.message}')
+            print(f'请参考文档：https://help.aliyun.com/zh/model-studio/developer-reference/error-code')
+        else:
+            # print(response.output.text)
+            pass
+
+        result_dict = json.loads(response.output.text)
+        return result_dict
 
 class UserAnswerViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
     """用户答题记录视图集"""
@@ -982,7 +1028,6 @@ def extend_text_with_ai(request):
         
         # 导入必要的库
         from openai import OpenAI
-        from django.conf import settings
         
         # 从settings中获取阿里云百炼API密钥
         dashscope_api_key = getattr(settings, 'DASHSCOPE_API_KEY', '')
@@ -1029,69 +1074,7 @@ def extend_text_with_ai(request):
 @permission_classes([IsAuthenticated])
 def analyze_fragrance_preferences(request):
     """分析用户答题记录，返回主香调和次香调"""
-    try:
-        # 获取会话ID
-        session_id = request.data.get('session_id')
-        if not session_id:
-            return Response(
-                {'detail': '会话ID不能为空。'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        
-        # 获取用户会话
-        try:
-            session = UserQuizSession.objects.get(session_id=session_id, user=request.user)
-        except UserQuizSession.DoesNotExist:
-            return Response(
-                {'detail': '会话不存在或不属于当前用户。'},
-                status=status.HTTP_404_NOT_FOUND
-            )
-        
-        # 获取用户前三个部分的答案
-        user_answers = UserAnswer.objects.filter(
-            session=session,
-            part__in=[1, 2, 3]
-        )
-        
-        # 如果没有答案，返回默认值
-        if not user_answers.exists():
-            return Response({
-                'main_fragrance': '柑橘类',
-                'secondary_fragrance': '蔬果类'
-            }, status=status.HTTP_200_OK)
-        
-        # 分析用户的香调偏好
-        viewset = UserQuizSessionViewSet()
-        viewset.request = request
-        fragrance_profile = viewset._analyze_fragrance_profile(user_answers)
-        
-        # 调用AI接口获取主香调和次香调
-        fragrance_result = viewset._generate_fragrance_combinations(fragrance_profile)
-        
-        # 保存香调结果到会话中
-        session.main_fragrance = fragrance_result['main_fragrance']
-        session.secondary_fragrance = fragrance_result['secondary_fragrance']
-        session.save()
-        
-        # 获取主香调和次香调的图片列表
-        main_fragrance_images = _get_fragrance_images(fragrance_result['main_fragrance'])
-        secondary_fragrance_images = _get_fragrance_images(fragrance_result['secondary_fragrance'])
-        
-        # 返回结果
-        return Response({
-            'main_fragrance': fragrance_result['main_fragrance'],
-            'secondary_fragrance': fragrance_result['secondary_fragrance'],
-            'main_images': main_fragrance_images,
-            'secondary_images': secondary_fragrance_images
-        }, status=status.HTTP_200_OK)
-        
-    except Exception as e:
-        # 记录错误日志
-        print(f"分析香调偏好失败: {str(e)}")
-        return Response(
-            {'detail': f'分析香调偏好失败，请稍后重试。错误信息：{str(e)}'},
-            status=status.HTTP_500_INTERNAL_SERVER_ERROR
-        )
+    pass
 
 def _get_fragrance_images(category_type):
     """

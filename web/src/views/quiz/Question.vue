@@ -623,7 +623,9 @@ const currentGroup = computed(() => currentQuestion.value ? {
   imageRange: currentQuestion.value.imageRange,
   imagesPath: currentQuestion.value.imagesPath,
   mainFragrance: currentQuestion.value.mainFragrance,
-  secondaryFragrance: currentQuestion.value.secondaryFragrance
+  secondaryFragrance: currentQuestion.value.secondaryFragrance,
+  main_images: currentQuestion.value.main_images,
+  secondary_images: currentQuestion.value.secondary_images
 } : {})
 
 const visibleQuestionIndex = computed(() => currentVisibleIndex.value)
@@ -912,6 +914,8 @@ const nextQuestion = async () => {
               allQuestionsWithGroup.value.forEach(q => {
                 q.mainFragrance = groupData.mainFragrance;
                 q.secondaryFragrance = groupData.secondaryFragrance;
+                q.main_images = groupData.main_images;
+                q.secondary_images = groupData.secondary_images;
               });
             }
           }
@@ -1064,12 +1068,33 @@ const shuffleFragranceImages = async (question) => {
   console.log('🌸 主香调:', mainFragrance, '次香调:', secondaryFragrance);
   
   try {
-    // 从API获取主香调和次香调的图片列表
-    const mainResponse = await getFragranceImages(mainFragrance);
-    const secondaryResponse = await getFragranceImages(secondaryFragrance);
+    // 检查是否已经从后端获取了图片数据
+    let mainImages = [];
+    let secondaryImages = [];
     
-    const mainImages = mainResponse.images || [];
-    const secondaryImages = secondaryResponse.images || [];
+    // 如果currentGroup.value中已有main_images和secondary_images，直接使用
+    if (currentGroup.value.main_images && Array.isArray(currentGroup.value.main_images)) {
+      mainImages = currentGroup.value.main_images;
+      console.log('✅ 使用后端提供的主香调图片数据:', mainImages);
+    }
+    
+    if (currentGroup.value.secondary_images && Array.isArray(currentGroup.value.secondary_images)) {
+      secondaryImages = currentGroup.value.secondary_images;
+      console.log('✅ 使用后端提供的次香调图片数据:', secondaryImages);
+    }
+    
+    // 只有在没有图片数据时才调用API获取
+    if (mainImages.length === 0 || secondaryImages.length === 0) {
+      console.warn('⚠️ 后端未提供图片数据，尝试从API获取');
+      if (mainImages.length === 0) {
+        const mainResponse = await getFragranceImages(mainFragrance);
+        mainImages = mainResponse.images || [];
+      }
+      if (secondaryImages.length === 0) {
+        const secondaryResponse = await getFragranceImages(secondaryFragrance);
+        secondaryImages = secondaryResponse.images || [];
+      }
+    }
     
     // 合并所有图片
     const allImages = [...mainImages, ...secondaryImages];
