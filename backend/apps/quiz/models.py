@@ -143,12 +143,11 @@ class UserAnswer(models.Model):
 
 class FragranceCategory(models.Model):
     """香调类别模型"""
-    id = models.CharField(max_length=50, primary_key=True, verbose_name="香调ID")
     name = models.CharField(max_length=100, verbose_name="中文名称")
     english_name = models.CharField(max_length=100, verbose_name="英文名称")
     core_trait_1 = models.CharField(max_length=100, null=True, blank=True, verbose_name="核心特质1(类型/强度)")
     core_trait_2 = models.CharField(max_length=100, null=True, blank=True, verbose_name="核心特质2(类型/强度)")
-    intensity = models.IntegerField(default=5, verbose_name="气味强度", help_text="1-10之间的数值")
+    intensity = models.CharField(max_length=20, null=True, blank=True, verbose_name="气味强度")
     style_keywords = models.TextField(null=True, blank=True, verbose_name="香气风格关键词")
     image_url = models.CharField(max_length=255, verbose_name="图片地址")
     category_type = models.CharField(max_length=50, verbose_name="香调类别")
