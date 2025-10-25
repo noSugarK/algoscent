@@ -71,33 +71,37 @@
           </div>
         </div>
 
-        <!-- Personality Insights -->
-        <div class="bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl shadow-lg p-8 text-white">
-          <h2 class="text-xl font-semibold mb-4">你的性格香氛洞察</h2>
-          <div class="space-y-4">
-            <div v-for="insight in personalityInsights" :key="insight.title" class="bg-white/10 backdrop-blur-sm rounded-lg p-4">
-              <h3 class="font-medium text-lg mb-2">{{ insight.title }}</h3>
-              <p>{{ insight.description }}</p>
-            </div>
+        <!-- User Description -->
+        <div class="bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl shadow-lg p-8 text-white" v-if="reportData.description">
+          <h2 class="text-xl font-semibold mb-4">您的香氛分析</h2>
+          <div class="bg-white/10 backdrop-blur-sm rounded-lg p-4">
+            <p class="text-white">{{ reportData.description }}</p>
           </div>
         </div>
 
         <!-- Recommended Scents -->
-        <div class="bg-white rounded-xl shadow-md p-6">
+        <div class="bg-white rounded-xl shadow-md p-6" v-if="reportData.main_fragrance || reportData.secondary_fragrance">
           <h2 class="text-xl font-semibold text-gray-800 mb-4">推荐香氛类型</h2>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div
-              v-for="scent in recommendedScents"
-              :key="scent.id"
-              class="border border-gray-200 rounded-lg p-4 hover:border-indigo-300 transition-colors"
-            >
+            <div v-if="reportData.main_fragrance" class="border border-gray-200 rounded-lg p-4 hover:border-indigo-300 transition-colors">
               <div class="flex items-start">
                 <div class="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center mr-4 flex-shrink-0">
-                  <span class="text-xl">{{ scent.emoji }}</span>
+                  <span class="text-xl">🌸</span>
                 </div>
                 <div>
-                  <h3 class="font-medium text-gray-800 mb-1">{{ scent.name }}</h3>
-                  <p class="text-sm text-gray-600">{{ scent.description }}</p>
+                  <h3 class="font-medium text-gray-800 mb-1">主香调</h3>
+                  <p class="text-sm text-gray-600">{{ reportData.main_fragrance }}</p>
+                </div>
+              </div>
+            </div>
+            <div v-if="reportData.secondary_fragrance" class="border border-gray-200 rounded-lg p-4 hover:border-indigo-300 transition-colors">
+              <div class="flex items-start">
+                <div class="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center mr-4 flex-shrink-0">
+                  <span class="text-xl">🍊</span>
+                </div>
+                <div>
+                  <h3 class="font-medium text-gray-800 mb-1">次香调</h3>
+                  <p class="text-sm text-gray-600">{{ reportData.secondary_fragrance }}</p>
                 </div>
               </div>
             </div>
@@ -238,49 +242,11 @@ const loading = ref(false)
 const error = ref('')
 const showAnswerDetails = ref(true)
 
-// 根据用户数据生成的性格洞察
-const personalityInsights = ref([
-  {
-    title: "你的性格特质",
-    description: "基于你的回答，我们发现你是一个喜欢探索和创新的人，倾向于选择独特且富有个性的香氛。"
-  },
-  {
-    title: "情绪与香氛关联",
-    description: "你在压力情境下倾向于寻求平静和放松，木质和香草调的香氛可能会特别适合你。"
-  },
-  {
-    title: "生活方式匹配",
-    description: "你的生活方式偏向于平衡和多样化，适合尝试不同香调的组合，以适应不同的场合和心情。"
-  }
-])
+// 根据用户数据生成的性格洞察（现在使用后端返回的描述）
+const personalityInsights = ref([])
 
-// 推荐的香氛类型
-const recommendedScents = ref([
-  {
-    id: 1,
-    name: "木质调香氛",
-    description: "温暖、沉稳的木质香气，帮助你在忙碌的生活中找到宁静。",
-    emoji: "🌲"
-  },
-  {
-    id: 2,
-    name: "花香调香氛",
-    description: "清新、优雅的花香，为你的日常增添一抹浪漫和愉悦。",
-    emoji: "🌸"
-  },
-  {
-    id: 3,
-    name: "柑橘调香氛",
-    description: "活力、明快的柑橘香气，提升你的精神状态和创造力。",
-    emoji: "🍊"
-  },
-  {
-    id: 4,
-    name: "香草调香氛",
-    description: "甜美、舒适的香草气息，为你营造温馨的氛围。",
-    emoji: "🌿"
-  }
-])
+// 推荐的香氛类型（现在使用后端返回的主次香调）
+const recommendedScents = ref([])
 
 // 格式化日期
 const formatDate = (dateString) => {
@@ -389,9 +355,8 @@ const loadReport = async () => {
 
 // 根据实际数据更新洞察和推荐
 const updateInsightsAndRecommendations = () => {
-  // 这里可以根据实际的答题数据进行更复杂的分析和推荐
-  // 目前使用模拟数据，但结构保持一致
-  console.log('Updating insights and recommendations based on user answers')
+  // 现在使用后端返回的描述和主次香调，不再需要在这里生成默认数据
+  console.log('使用后端返回的描述和香调数据')
 }
 
 // 切换答题详情显示

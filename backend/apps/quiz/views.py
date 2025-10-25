@@ -366,6 +366,7 @@ class UserQuizSessionViewSet(
                 'total_questions': user_answers.count(),
                 'main_fragrance': session.main_fragrance,
                 'secondary_fragrance': session.secondary_fragrance,
+                'description': session.description,
                 'answers': answers_data
             }
             
@@ -521,6 +522,7 @@ class UserQuizSessionViewSet(
             fragrance_result = {
                 'main_fragrance': db_session.main_fragrance,
                 'secondary_fragrance': db_session.secondary_fragrance,
+                'description': db_session.description,
                 'main_images': [],
                 'secondary_images': []
             }
@@ -531,11 +533,13 @@ class UserQuizSessionViewSet(
             # 保存香调结果到数据库中，以便下次使用
             db_session.main_fragrance = fragrance_result['main_fragrance']
             db_session.secondary_fragrance = fragrance_result['secondary_fragrance']
+            db_session.description = fragrance_result['description']
             db_session.save()
             
             # 同时更新当前会话对象的香调信息
             session.main_fragrance = fragrance_result['main_fragrance']
             session.secondary_fragrance = fragrance_result['secondary_fragrance']
+            session.description = fragrance_result['description']
         
         # 获取Part4题目组
         try:
@@ -606,7 +610,7 @@ class UserQuizSessionViewSet(
     
     def _generate_fragrance_combinations(self):
         """
-        调用AI接口分析用户答题记录，返回主香调和次香调
+        调用AI接口分析用户答题记录，返回主香调、次香调和描述
         """
         # 调用AI接口分析用户答题记录
         try:
@@ -615,11 +619,13 @@ class UserQuizSessionViewSet(
             # 解析AI返回的结果
             main_fragrance = ai_result.get('主香调')  # 默认值
             secondary_fragrance = ai_result.get('次香调')  # 默认值
+            description = ai_result.get('描述', '')  # 描述内容
             
             # 构建返回结果
             result = {
                 'main_fragrance': main_fragrance,
                 'secondary_fragrance': secondary_fragrance,
+                'description': description,
                 'main_images': [],  # 由前端填充
                 'secondary_images': []  # 由前端填充
             }
@@ -632,6 +638,7 @@ class UserQuizSessionViewSet(
             return {
                 'main_fragrance': '',
                 'secondary_fragrance': '',  # 确保与数据库中的类别完全匹配
+                'description': '',
                 'main_images': [],
                 'secondary_images': []
             }
@@ -657,7 +664,8 @@ class UserQuizSessionViewSet(
             
             return {
                 '主香调': main_fragrance,
-                '次香调': secondary_fragrance
+                '次香调': secondary_fragrance,
+                '描述': ''
             }
         
         # 获取用户前三个部分的答案
@@ -727,7 +735,8 @@ class UserQuizSessionViewSet(
             # 返回默认值，而不是Response对象
             return {
                 '主香调': '花香',
-                '次香调': '果香'
+                '次香调': '果香',
+                '描述': '您是一位热爱自然、追求内心平静的人。花香调的香气能够带给您宁静与舒适，而果香调则为您的生活增添活力与愉悦。这种香氛组合适合日常使用，既能展现您的温柔气质，又能体现您积极乐观的生活态度。'
             }
 
         response = Application.call(
@@ -744,7 +753,8 @@ class UserQuizSessionViewSet(
             # 返回默认值
             return {
                 '主香调': '花香',
-                '次香调': '果香'
+                '次香调': '果香',
+                '描述': '您是一位热爱自然、追求内心平静的人。花香调的香气能够带给您宁静与舒适，而果香调则为您的生活增添活力与愉悦。这种香氛组合适合日常使用，既能展现您的温柔气质，又能体现您积极乐观的生活态度。'
             }
         else:
             # print(response.output.text)
@@ -758,7 +768,8 @@ class UserQuizSessionViewSet(
             # 返回默认值
             return {
                 '主香调': '花香',
-                '次香调': '果香'
+                '次香调': '果香',
+                '描述': '您是一位热爱自然、追求内心平静的人。花香调的香气能够带给您宁静与舒适，而果香调则为您的生活增添活力与愉悦。这种香氛组合适合日常使用，既能展现您的温柔气质，又能体现您积极乐观的生活态度。'
             }
 
 class UserAnswerViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):

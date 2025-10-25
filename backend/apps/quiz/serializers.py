@@ -84,7 +84,8 @@ class UserQuizSessionSerializer(serializers.ModelSerializer):
         fields = [
             'session_id', 'status', 'start_time', 'end_time', 
             'duration_ms', 'user', 'answers', 'completed_at', 
-            'time_spent', 'total_questions'
+            'time_spent', 'total_questions', 'main_fragrance', 
+            'secondary_fragrance', 'description'
         ]
 
 class UserQuizSessionCreateSerializer(serializers.Serializer):

@@ -103,6 +103,7 @@ class UserQuizSession(models.Model):
     current_part = models.IntegerField(default=1, verbose_name="当前所处阶段（1-4）")
     main_fragrance = models.CharField(max_length=50, default="", blank=True, verbose_name="主香调")
     secondary_fragrance = models.CharField(max_length=50, default="", blank=True, verbose_name="次香调")
+    description = models.TextField(default="", blank=True, verbose_name="用户情况分析描述")
 
     class Meta:
         db_table = 'user_quiz_session'
